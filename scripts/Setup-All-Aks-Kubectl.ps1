@@ -1,12 +1,23 @@
 # Setup-Aks-Kubectl.ps1
 # Description: This script gets kubectl credentials for all AKS clusters in all subscriptions and tests the connections to the clusters.
+# Prerequisites: WinGet (install in Store for auto-updating, else static version via: `Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile winget.appxbundle ; Add-AppxPackage -Path winget.appxbundle`)
 
 [CmdletBinding()]
 param (
     # Proxy URL to be used for all AKS clusters
     [Parameter()]
     [string]
-    $ProxyUrl = "http://fpx-primary.valtech.com:8080"
+    $ProxyUrl = "http://fpx-primary.valtech.com:8080",
+
+    # Skip setting proxy on any AKS cluster
+    [Parameter()]
+    [switch]
+    $SkipProxyAll,
+
+    # Skip testing connections to the AKS clusters
+    [Parameter()]
+    [switch]
+    $SkipTestConnections
 )
 
 # Install Azure CLI using WinGet if not already installed
@@ -45,7 +56,10 @@ else {
 
     # Ask user if proxy should be used for all clusters
     Write-Host
-    $useProxyAll = Read-Host "Use proxy for all clusters? (y/n)"
+    $useProxyAll = "n"
+    if (!$SkipProxyAll) {
+        $useProxyAll = Read-Host "Use proxy ($proxyUrl) for all clusters? (y/n/none)"
+    }
 
     # Get kubeconfig for each AKS cluster using Azure CLI
     $aksClusters | ForEach-Object {
@@ -61,40 +75,51 @@ else {
         }
         else {
             # Ask user if proxy should be used
-            $useProxy = Read-Host "Use proxy for cluster $($_.name)? (y/n)"
-            if ($useProxy -eq "y") {
-                # Set proxy for added cluster
-                kubectl config set-cluster $_.name --proxy-url=$proxyUrl
+            if ($SkipProxyAll -or $useProxyAll -eq "none") {
+                # Do not set proxy for added cluster
+                Write-Host "Not setting proxy for cluster $($_.name)"
             }
             else {
-                # Specify alternative Proxy URL or ENTER for no proxy
-                $proxyUrlAlt = Read-Host "Specify alternative Proxy URL for cluster $($_.name) or ENTER for no proxy: "
-                if ($proxyUrlAlt -ne "") {
+                $useProxy = Read-Host "Use proxy ($proxyUrl) for cluster $($_.name)? (y/n)"
+                if ($useProxy -eq "y") {
                     # Set proxy for added cluster
-                    kubectl config set-cluster $_.name --proxy-url=$proxyUrlAlt
+                    kubectl config set-cluster $_.name --proxy-url=$proxyUrl
+                }
+                else {
+                    # Specify alternative Proxy URL or ENTER for no proxy
+                    $proxyUrlAlt = Read-Host "Specify alternative Proxy URL for cluster $($_.name) or ENTER for no proxy"
+                    if ($proxyUrlAlt -ne "") {
+                        # Set proxy for added cluster
+                        kubectl config set-cluster $_.name --proxy-url=$proxyUrlAlt
+                    }
                 }
             }
         }
     }
 
     # Test connections to the AKS clusters using kubectl version command
-    Write-Host
-    Write-Host "Testing kubectl connections to the AKS clusters:"
-    $aksClusters | ForEach-Object {
-        # Write-Host "Testing connection to AKS cluster $($_.name):"
+    if ($SkipTestConnections) {
+        Write-Host "Skipping testing connections to the AKS clusters."
+    }
+    else {
+        Write-Host
+        Write-Host "Testing kubectl connections to the AKS clusters:"
+        $aksClusters | ForEach-Object {
+            # Write-Host "Testing connection to AKS cluster $($_.name):"
 
-        # Set subscription context to that of the AKS cluster
-        az account set --subscription $_.subscriptionId --output none
+            # Set subscription context to that of the AKS cluster
+            az account set --subscription $_.subscriptionId --output none
 
-        # Test connection to the AKS cluster and display success or failure
-        $serverVersion = (kubectl version --context "$($_.name)-admin" -o json | ConvertFrom-Json).serverVersion
-        if ($null -ne $serverVersion) {
-            #  Print green checkmark and name of the AKS cluster
-            Write-Host "`e[32m√`e[0m $($_.name)"
-        }
-        else {
-            # Print red cross and name of the AKS cluster
-            Write-Host "`e[31mX`e[0m $($_.name)"
+            # Test connection to the AKS cluster and display success or failure
+            $serverVersion = (kubectl version --context "$($_.name)-admin" -o json | ConvertFrom-Json).serverVersion
+            if ($null -ne $serverVersion) {
+                #  Print green checkmark and name of the AKS cluster
+                Write-Host "`e[32m√`e[0m $($_.name)"
+            }
+            else {
+                # Print red cross and name of the AKS cluster
+                Write-Host "`e[31mX`e[0m $($_.name)"
+            }
         }
     }
 
