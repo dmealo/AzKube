@@ -17,27 +17,37 @@ param (
     # Skip testing connections to the AKS clusters
     [Parameter()]
     [switch]
-    $SkipTestConnections
+    $SkipTestConnections,
+
+    # Simple mode to get kubectl credentials for all AKS clusters without asking for user input
+    [Parameter()]
+    [switch]
+    $SimpleMode
 )
 
-# Install Azure CLI using WinGet if not already installed
-if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-    winget install --id Microsoft.AzureCLI -e
+# Create a class with ToString method to display AKS clusters as a simple menu
+class Cluster {
+    [string]$Name
+    [int]$Index
+    [string]$SubscriptionId
+    [string]$ResourceGroup
+    static [int]$LastId = 0
+
+    Cluster([string]$name, [string]$subscriptionId, [string]$resourceGroup) {
+        $this.Name = $name
+        $this.Index = [Cluster]::LastId + 1
+        [Cluster]::LastId = $this.Index
+        $this.SubscriptionId = $subscriptionId
+        $this.ResourceGroup = $resourceGroup
+    }
+
+    [string] ToString() {
+        return "$($this.Name) (RG: $($this.ResourceGroup) - SubId: $($this.SubscriptionId))"
+    }
 }
 
-# Install Azure Resource Graph if not already installed
-if ((az extension list | ConvertFrom-Json | Where-Object { $_.name -eq 'resource-graph' }).Count -eq 0) {
-    az extension add --name resource-graph
-}
-
-# Get all AKS clusters into a variable using Azure Resource Graph
-$aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data
-
-# Diaplay AKS clusters as a text list for display only
-if ($aksClusters.Count -eq 0) {
-    Write-Host "No AKS clusters found to get kubectl credentials for."
-}
-else {
+# Function to get kubectl credentials for an array of AKS clusters
+function Get-KubectlCredentialsForAksClusters($aksClusters) {
     Write-Host
     Write-Host "Getting kubectl credentials for these AKS Clusters:"
     $aksClusters | ForEach-Object { Write-Host $_.Name }
@@ -56,9 +66,9 @@ else {
 
     # Ask user if proxy should be used for all clusters
     Write-Host
-    $useProxyAll = "n"
+    $useProxyAll = "y"
     if (!$SkipProxyAll) {
-        $useProxyAll = Read-Host "Use proxy ($proxyUrl) for all clusters? (y/n/none)"
+        $useProxyAll = ($answer = (Read-Host "Use proxy ($proxyUrl) for all clusters? (Y/n/none)").ToLower()) ? $answer : $useProxyAll
     }
 
     # Get kubeconfig for each AKS cluster using Azure CLI
@@ -96,35 +106,70 @@ else {
             }
         }
     }
+}    
 
-    # Test connections to the AKS clusters using kubectl version command
-    if ($SkipTestConnections) {
-        Write-Host "Skipping testing connections to the AKS clusters."
-    }
-    else {
-        Write-Host
-        Write-Host "Testing kubectl connections to the AKS clusters:"
-        $aksClusters | ForEach-Object {
-            # Write-Host "Testing connection to AKS cluster $($_.name):"
-
-            # Set subscription context to that of the AKS cluster
-            az account set --subscription $_.subscriptionId --output none
-
-            # Test connection to the AKS cluster and display success or failure
-            $serverVersion = (kubectl version --context "$($_.name)-admin" -o json | ConvertFrom-Json).serverVersion
-            if ($null -ne $serverVersion) {
-                #  Print green checkmark and name of the AKS cluster
-                Write-Host "`e[32m√`e[0m $($_.name)"
-            }
-            else {
-                # Print red cross and name of the AKS cluster
-                Write-Host "`e[31mX`e[0m $($_.name)"
-            }
-        }
-    }
-
+# Install Azure CLI using WinGet if not already installed
+if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+    winget install --id Microsoft.AzureCLI -e
 }
 
+# Install Azure Resource Graph if not already installed
+if ((az extension list | ConvertFrom-Json | Where-Object { $_.name -eq 'resource-graph' }).Count -eq 0) {
+    az extension add --name resource-graph
+}
+
+# Get all AKS clusters into a variable using Azure Resource Graph
+$aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data | ForEach-Object { [Cluster]::new($_.name, $_.subscriptionId, $_.resourceGroup) }
+
+# Install PSMenu if not already installed
+if (-not (Get-Command Show-Menu -ErrorAction SilentlyContinue)) {
+    Install-Module -Name PSMenu -Force
+}
+
+# Diaplay AKS clusters as a text list for display only
+if ($aksClusters.Count -eq 0) {
+    Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor Orange
+    exit 0
+}
+# elseif (!$SimpleMode) {
+    Write-Host
+    Write-Host "Select AKS cluster(s) to get kubectl credentials for:"
+    # Display AKS clusters as a simple menu for selection
+    $clusterIndexes = $($aksClusters | ForEach-Object { [int]$aksClusters.IndexOf($_) })
+    $selectedClusters = Show-Menu -MenuItems $aksClusters -MultiSelect -InitialSelection ($SimpleMode ? $clusterIndexes : @())
+    Write-Host 
+    Write-Host "Selected AKS cluster(s): $($selectedClusters | ForEach-Object { "`n" + $_.ToString() } )" -ForegroundColor Cyan
+    $aksClusters = $selectedClusters
+# }
+
+# Get kubectl credentials for the selected AKS clusters
+Get-KubectlCredentialsForAksClusters $aksClusters
+
+# Test connections to the AKS clusters using kubectl version command
+if ($SkipTestConnections) {
+    Write-Host "Skipping testing connections to the AKS clusters."
+}
+else {
+    Write-Host
+    Write-Host "Testing kubectl connections to the AKS clusters:"
+    $aksClusters | ForEach-Object {
+        # Write-Host "Testing connection to AKS cluster $($_.name):"
+
+        # Set subscription context to that of the AKS cluster
+        az account set --subscription $_.subscriptionId --output none
+
+        # Test connection to the AKS cluster and display success or failure
+        $serverVersion = (kubectl version --context "$($_.name)-admin" -o json | ConvertFrom-Json).serverVersion
+        if ($null -ne $serverVersion) {
+            #  Print green checkmark and name of the AKS cluster
+            Write-Host "`e[32m√`e[0m $($_.name)"
+        }
+        else {
+            # Print red cross and name of the AKS cluster
+            Write-Host "`e[31mX`e[0m $($_.name)"
+        }
+    }
+}
 # # List all subscriptions into a variable
 # $subs = az account list --output json
 
