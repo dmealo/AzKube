@@ -31,44 +31,27 @@ param (
 )
 
 . "$PSScriptRoot\..\private\Aks-Utilities.ps1"
+. "$PSScriptRoot\..\private\Aks-Ui-Utilities.ps1"
 
-# Install Azure CLI using WinGet if not already installed
-if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
-    winget install --id Microsoft.AzureCLI -e
-}
 
-# Install Azure Resource Graph if not already installed
-if ((az extension list | ConvertFrom-Json | Where-Object { $_.name -eq 'resource-graph' }).Count -eq 0) {
-    az extension add --name resource-graph
-}
+Install-AzureCli
 
 # Get all AKS clusters into a variable using Azure Resource Graph
-$aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data | ForEach-Object { [Cluster]::new($_.name, $_.subscriptionId, $_.resourceGroup) }
-
-if ($aksClusters.Count -eq 0) {
-    Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor Orange
+$aksClusters = Get-AksClusters
+if ($null -eq $aksClusters) {
     exit 0
 }
 
-# Install PSMenu if not already installed
-if (-not (Get-Command Show-Menu -ErrorAction SilentlyContinue)) {
-    Install-Module -Name PSMenu -Force
-}
+Install-PsMenu
 
+# Show AKS clusters as a simple menu for selection
 if ($SetupAllWithDefaults) {
     # Continue execution
     Write-Host "Setting up all AKS clusters with default settings:" -ForegroundColor Cyan
-    Write-Host $($aksClusters | ForEach-Object { "`n" + $_.ToString() } ) -ForegroundColor Cyan
+    Show-ObjectArray $aksClusters Cyan
 }
 else {
-    Write-Host
-    Write-Host "Select AKS cluster(s) to get kubectl credentials for:"
-    # Display AKS clusters as a simple menu for selection
-    $clusterIndexes = $($aksClusters | ForEach-Object { [int]$aksClusters.IndexOf($_) })
-    $selectedClusters = Show-Menu -MenuItems $aksClusters -MultiSelect -InitialSelection ($SelectAll ? $clusterIndexes : @())
-    Write-Host 
-    Write-Host "Selected AKS cluster(s): $($selectedClusters | ForEach-Object { "`n" + $_.ToString() } )" -ForegroundColor Cyan
-    $aksClusters = $selectedClusters
+    $aksClusters = Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to get kubectl credentials for:"
 }
 
 # Get kubectl credentials for the selected AKS clusters

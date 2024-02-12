@@ -21,6 +21,38 @@ class Cluster {
     }
 }
 
+# Install Azure CLI using WinGet if not already installed
+function Install-AzureCli {
+    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing Azure CLI using WinGet..."
+        winget install --id Microsoft.AzureCLI -e
+    }
+}
+
+# Install PSMenu if not already installed
+function Install-PSMenu {
+    if (-not (Get-Command Show-Menu -ErrorAction SilentlyContinue)) {
+        Install-Module -Name PSMenu -Force
+    }
+}
+
+function Show-ObjectArray($objects, $color) {
+    $objects | ForEach-Object { Write-Host $_.ToString() -ForegroundColor $color }
+}
+
+# Get all AKS clusters into a variable using Azure Resource Graph
+function Get-AksClusters {
+    # Get all AKS clusters into a variable using Azure Resource Graph
+    [Cluster[]] $aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data | ForEach-Object { [Cluster]::new($_.name, $_.subscriptionId, $_.resourceGroup) }
+
+    if ($aksClusters.Count -eq 0) {
+        Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor Orange
+        return $null
+    }
+
+    return $aksClusters
+}
+
 # Function to get kubectl credentials for an array of AKS clusters
 function Get-KubectlCredentialsForAksClusters($aksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults) {
     Write-Host
@@ -84,8 +116,7 @@ function Get-KubectlCredentialsForAksClusters($aksClusters, $ProxyUrl, $SkipProx
 } 
 
 # Function to test connections to an array of AKS clusters
-function Test-ConnectionsToAksClusters($aksClusters) {
-    
+function Test-ConnectionsToAksClusters($aksClusters) {    
     Write-Host
     Write-Host "Testing kubectl connections to the AKS clusters:"
     $aksClusters | ForEach-Object {

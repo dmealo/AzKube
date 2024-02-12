@@ -38,165 +38,130 @@ Describe "Cluster Tests" {
     }
 }
 
-# Describe "Test-ConnectionsToAksClusters Tests" {
-#     BeforeAll {
-#         # Mock the 'az' and 'kubectl' commands
-#         Mock az { }
-#         Mock kubectl { }
-#     }
+Describe "Aks-Utilities Tests" {
+    BeforeAll {
+        $testPath = "$($PSCommandPath.Replace('tests', 'src').Replace('.Tests.ps1','.ps1'))"
+        . $testPath
+        Write-Host "Running tests for $($testPath)"
+    }
 
-#     Context "When testing connections to AKS clusters" {
-#         It "Should test connection to each AKS cluster" {
-#             # Arrange
-#             $aksClusters = @(
-#                 [PSCustomObject]@{
-#                     name = "Cluster1"
-#                     subscriptionId = "12345678-1234-1234-1234-1234567890ab"
-#                 },
-#                 [PSCustomObject]@{
-#                     name = "Cluster2"
-#                     subscriptionId = "98765432-4321-4321-4321-0987654321ba"
-#                 }
-#             )
+    Describe "Install-AzureCli" {
+        Context "When Azure CLI is not installed" {
+            BeforeEach {
+                Mock Get-Command { }
+                Mock winget { }
+            }
 
-#             # Act
-#             Test-ConnectionsToAksClusters $aksClusters
+            It "Should install Azure CLI using WinGet" {
+                # Act
+                Install-AzureCli
 
-#             # Assert
-#             # Verify that 'az account set' is called with the correct subscriptionId
-#             Assert-MockCalled az -ParameterFilter { $args[0] -eq "account set" -and $args[1] -eq "--subscription" -and $args[2] -eq "12345678-1234-1234-1234-1234567890ab" } -Times 1
-#             Assert-MockCalled az -ParameterFilter { $args[0] -eq "account set" -and $args[1] -eq "--subscription" -and $args[2] -eq "98765432-4321-4321-4321-0987654321ba" } -Times 1
+                # Assert
+                Assert-MockCalled winget -ParameterFilter { $args[0] -eq "install" -and $args[1] -eq "--id" -and $args[2] -eq "Microsoft.AzureCLI" -and $args[3] -eq "-e" } -Times 1
+            }
+        }
 
-#             # Verify that 'kubectl version' is called with the correct context
-#             Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "version" -and $args[1] -eq "--context" -and $args[2] -eq "Cluster1-admin" } -Times 1
-#             Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "version" -and $args[1] -eq "--context" -and $args[2] -eq "Cluster2-admin" } -Times 1
-#         }
-#     }
-# }
+        Context "When Azure CLI is already installed" {
+            BeforeEach {
+                Mock Get-Command { az }
+                Mock winget { }
+            }
 
-# Describe "Aks-Utilities Tests" {
-#     BeforeAll {
-#         $testPath = "$($PSCommandPath.Replace('tests', 'src').Replace('.Tests.ps1','.ps1'))"
-#         . $testPath
-#         Write-Host "Running tests for $($testPath)"
-#     }
+            It "Should not install Azure CLI" {
+                # Act
+                Install-AzureCli
 
-#     Describe "Get-KubectlCredentialsForAksClusters" {
-#         Context "When logged into Azure CLI" {
-#             BeforeAll {
-#                 Mock az { }
-#                 Mock kubectl { }
-#             }
+                # Assert
+                Assert-MockCalled winget -Times 0
+            }
+        }
+    }
 
-#             It "Should install kubectl if not already installed" {
-#                 # Arrange
-#                 Mock Get-Command { } -ParameterFilter { $args[0] -eq "kubectl" } -ErrorAction SilentlyContinue
+    # Describe "Install-PSMenu" {
+    #     Context "When PSMenu is not installed" {
+    #         BeforeEach {
+    #             Mock Get-Command { }
+    #             Mock Install-Module { }
+    #         }
 
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters
+    #         It "Should install PSMenu" {
+    #             # Act
+    #             Install-PSMenu
 
-#                 # Assert
-#                 Assert-MockCalled winget -ParameterFilter { $args[0] -eq "install" -and $args[1] -eq "--id" -and $args[2] -eq "Kubernetes.kubectl" -and $args[3] -eq "-e" } -Times 1
-#             }
+    #             # Assert
+    #             Assert-MockCalled Install-Module -ParameterFilter { $args[0] -eq "PSMenu" -and $args[1] -eq "-Force" } -Times 1
+    #         }
+    #     }
 
-#             It "Should set subscription context for each AKS cluster" {
-#                 # Arrange
-#                 Mock az { }
+    #     Context "When PSMenu is already installed" {
+    #         BeforeEach {
+    #             Mock Get-Command { Show-Menu }
+    #         }
 
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters
+    #         It "Should not install PSMenu" {
+    #             # Act
+    #             Install-PSMenu
 
-#                 # Assert
-#                 Assert-MockCalled az -ParameterFilter { $args[0] -eq "account set" -and $args[1] -eq "--subscription" -and $args[2] -eq "12345678-1234-1234-1234-1234567890ab" } -Times 1
-#                 Assert-MockCalled az -ParameterFilter { $args[0] -eq "account set" -and $args[1] -eq "--subscription" -and $args[2] -eq "98765432-4321-4321-4321-0987654321ba" } -Times 1
-#             }
+    #             # Assert
+    #             Assert-MockCalled Install-Module -Times 0
+    #         }
+    #     }
+    # }
 
-#             It "Should get kubeconfig for each AKS cluster" {
-#                 # Arrange
-#                 Mock az { }
-#                 Mock kubectl { }
+    # Describe "Show-ObjectArray" {
+    #     BeforeEach {
+    #         Mock Write-Host { }
+    #     }
 
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters
+    #     It "Should display objects in the specified color" {
+    #         # Arrange
+    #         $objects = @(
+    #             [PSCustomObject]@{ Name = "Object1" },
+    #             [PSCustomObject]@{ Name = "Object2" }
+    #         )
+    #         $color = "Green"
 
-#                 # Assert
-#                 Assert-MockCalled az -ParameterFilter { $args[0] -eq "aks get-credentials" -and $args[1] -eq "--name" -and $args[2] -eq "Cluster1" -and $args[3] -eq "--resource-group" -and $args[4] -eq "MyResourceGroup" -and $args[5] -eq "--admin" -and $args[6] -eq "--overwrite-existing" } -Times 1
-#                 Assert-MockCalled az -ParameterFilter { $args[0] -eq "aks get-credentials" -and $args[1] -eq "--name" -and $args[2] -eq "Cluster2" -and $args[3] -eq "--resource-group" -and $args[4] -eq "MyResourceGroup" -and $args[5] -eq "--admin" -and $args[6] -eq "--overwrite-existing" } -Times 1
-#             }
+    #         # Act
+    #         Show-ObjectArray $objects $color
 
-#             It "Should set proxy for all clusters if chosen" {
-#                 # Arrange
-#                 Mock az { }
-#                 Mock kubectl { }
+    #         # Assert
+    #         Assert-MockCalled Write-Host -ParameterFilter { $args[0] -eq "Object1" -and $args[1] -eq "-ForegroundColor" -and $args[2] -eq "Green" } -Times 1
+    #         Assert-MockCalled Write-Host -ParameterFilter { $args[0] -eq "Object2" -and $args[1] -eq "-ForegroundColor" -and $args[2] -eq "Green" } -Times 1
+    #     }
+    # }
 
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters -ProxyUrl "http://proxy.example.com" -SkipProxyAll:$false -SetupAllWithDefaults:$false
+    # Describe "Get-AksClusters" {
+    #     Context "When AKS clusters are found" {
+    #         BeforeEach {
+    #             Mock az { [PSCustomObject]@{ data = @(@{ name = "Cluster1"; subscriptionId = "12345678-1234-1234-1234-1234567890ab"; resourceGroup = "MyResourceGroup" }) } }
+    #         }
 
-#                 # Assert
-#                 Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "config set-cluster" -and $args[1] -eq "Cluster1" -and $args[2] -eq "--proxy-url=http://proxy.example.com" } -Times 1
-#                 Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "config set-cluster" -and $args[1] -eq "Cluster2" -and $args[2] -eq "--proxy-url=http://proxy.example.com" } -Times 1
-#             }
+    #         It "Should return an array of Cluster objects" {
+    #             # Act
+    #             $result = Get-AksClusters
 
-#             It "Should not set proxy for any cluster if chosen" {
-#                 # Arrange
-#                 Mock az { }
-#                 Mock kubectl { }
+    #             # Assert
+    #             $result | Should -BeOfType [System.Array]
+    #             $result.Length | Should -Be 1
+    #             $result[0].Name | Should -Be "Cluster1"
+    #             $result[0].SubscriptionId | Should -Be "12345678-1234-1234-1234-1234567890ab"
+    #             $result[0].ResourceGroup | Should -Be "MyResourceGroup"
+    #         }
+    #     }
 
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters -SkipProxyAll:$true
+    #     Context "When no AKS clusters are found" {
+    #         BeforeEach {
+    #             Mock az { [PSCustomObject]@{ data = @() } }
+    #         }
 
-#                 # Assert
-#                 Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "config set-cluster" } -Times 0
-#             }
+    #         It "Should display a message and return null" {
+    #             # Act
+    #             $result = Get-AksClusters
 
-#             It "Should ask user for proxy usage per cluster" {
-#                 # Arrange
-#                 Mock az { }
-#                 Mock kubectl { }
-#                 Mock Read-Host { "y" }
-
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters -ProxyUrl "http://proxy.example.com" -SkipProxyAll:$false -SetupAllWithDefaults:$false
-
-#                 # Assert
-#                 Assert-MockCalled Read-Host -ParameterFilter { $args[0] -eq "Use proxy (http://proxy.example.com) for cluster Cluster1? (y/n)" } -Times 1
-#                 Assert-MockCalled Read-Host -ParameterFilter { $args[0] -eq "Use proxy (http://proxy.example.com) for cluster Cluster2? (y/n)" } -Times 1
-#                 Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "config set-cluster" -and $args[1] -eq "Cluster1" -and $args[2] -eq "--proxy-url=http://proxy.example.com" } -Times 1
-#                 Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "config set-cluster" -and $args[1] -eq "Cluster2" -and $args[2] -eq "--proxy-url=http://proxy.example.com" } -Times 1
-#             }
-
-#             It "Should ask user for alternative proxy URL per cluster" {
-#                 # Arrange
-#                 Mock az { }
-#                 Mock kubectl { }
-#                 Mock Read-Host { "http://altproxy.example.com" }
-
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters -ProxyUrl "http://proxy.example.com" -SkipProxyAll:$false -SetupAllWithDefaults:$false
-
-#                 # Assert
-#                 Assert-MockCalled Read-Host -ParameterFilter { $args[0] -eq "Use proxy (http://proxy.example.com) for cluster Cluster1? (y/n)" } -Times 1
-#                 Assert-MockCalled Read-Host -ParameterFilter { $args[0] -eq "Specify alternative Proxy URL for cluster Cluster1 or ENTER for no proxy" } -Times 1
-#                 Assert-MockCalled kubectl -ParameterFilter { $args[0] -eq "config set-cluster" -and $args[1] -eq "Cluster1" -and $args[2] -eq "--proxy-url=http://altproxy.example.com" } -Times 1
-#             }
-#         }
-
-#         Context "When not logged into Azure CLI" {
-#             BeforeAll {
-#                 Mock az { $null }
-#                 Mock kubectl { }
-#             }
-
-#             It "Should log into Azure CLI" {
-#                 # Arrange
-#                 Mock az { }
-
-#                 # Act
-#                 Get-KubectlCredentialsForAksClusters @aksClusters
-
-#                 # Assert
-#                 Assert-MockCalled az -ParameterFilter { $args[0] -eq "login" -and $args[1] -eq "--output" -and $args[2] -eq "none" } -Times 1
-#             }
-#         }
-#     }
-# }
+    #             # Assert
+    #             $result | Should -BeNull
+    #             Assert-MockCalled Write-Host -ParameterFilter { $args[0] -eq "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -and $args[1] -eq "-ForegroundColor" -and $args[2] -eq "Orange" } -Times 1
+    #         }
+    #     }
+    # }
+}
