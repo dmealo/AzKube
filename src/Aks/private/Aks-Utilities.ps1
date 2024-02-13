@@ -36,6 +36,32 @@ function Install-PSMenu {
     }
 }
 
+# Function to install kubectl using WinGet if not already installed
+function Install-Kubectl {
+     # Install kubectl using WinGet if not already installed
+    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        winget install --id Kubernetes.kubectl -e
+    }
+}
+
+# Function to connect to Azure CLI (login if not already logged in)
+function Connect-AzureCli {
+
+    # Check if already logged into Azure CLI
+    $azAccount = az account show --output json
+    if ($null -eq $azAccount) {
+        # Log into Azure with minimal output
+        az login --output none
+    }
+}
+
+# Function to set Azure CLI subscription context
+function Set-AzCliSubscription ($subscriptionId) {
+    # Set subscription context to that of the AKS cluster
+    az account set --subscription $subscriptionId --output none
+}
+
+# Function to display an array of objects as a simple menu
 function Show-ObjectArray($objects, $color) {
     $objects | ForEach-Object { Write-Host $_.ToString() -ForegroundColor $color }
 }
@@ -53,23 +79,43 @@ function Get-AksClusters {
     return $aksClusters
 }
 
+# Function to get kubectl credentials for an AKS cluster
+function Get-Kubectl-Credentials($ResourceGroup, $Name) {
+    # Get kubeconfig for the AKS cluster and add it to the local kubeconfig file
+    az aks get-credentials --resource-group $ResourceGroup --name $Name --admin --overwrite-existing --output none
+}
+
+# Function to set proxy for a cluster in kubeconfig
+function Set-Kubectl-Cluster-Proxy($Name, $ProxyUrl) {
+    # Set proxy for cluster in kubeconfig
+    kubectl config set-cluster $Name --proxy-url=$ProxyUrl
+}
+
+# Function to test connection to a Kubernetes cluster
+function Test-Kubectl-ServerVersion($Name) {
+    # Test connection to the AKS cluster
+    return (kubectl version --context "$($Name)-admin" -o json | ConvertFrom-Json).serverVersion
+}
+
+# Function to get a string with a green checkmark
+function Get-SuccessShortString () {
+    return "`e[32m√`e[0m"
+}
+
+# Function to get a string with a red cross
+function Get-FailureShortString () {
+    return "`e[31mX`e[0m"
+}
+
 # Function to get kubectl credentials for an array of AKS clusters
 function Get-KubectlCredentialsForAksClusters($aksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults) {
     Write-Host
     Write-Host "Getting kubectl credentials for these AKS Clusters:"
     $aksClusters | ForEach-Object { Write-Host $_.Name }
 
-    # Check if already logged into Azure CLI
-    $azAccount = az account show --output json
-    if ($null -eq $azAccount) {
-        # Log into Azure with minimal output
-        az login --output none
-    }
+    Connect-AzureCli
 
-    # Install kubectl using WinGet if not already installed
-    if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
-        winget install --id Kubernetes.kubectl -e
-    }
+    Install-Kubectl
 
     # Ask user if proxy should be used for all clusters
     Write-Host
@@ -80,15 +126,14 @@ function Get-KubectlCredentialsForAksClusters($aksClusters, $ProxyUrl, $SkipProx
 
     # Get kubeconfig for each AKS cluster using Azure CLI
     $aksClusters | ForEach-Object {
-        # Set subscription context to that of the AKS cluster
-        az account set --subscription $_.subscriptionId --output none
+        Set-AzCliSubscription $_.subscriptionId
 
-        # Get kubeconfig for the AKS cluster and add it to the local kubeconfig file
-        az aks get-credentials --name $_.name --resource-group $_.resourceGroup --admin --overwrite-existing --output none
+        # Get kubeconfig for the AKS cluster
+        Get-Kubectl-Credentials -ResourceGroup $_.ResourceGroup -Name $_.Name
 
         # Set proxy for added cluster if user chose to use proxy for all clusters
         if ($useProxyAll -eq "y") {
-            kubectl config set-cluster $_.name --proxy-url=$ProxyUrl
+            Set-Kubectl-Cluster-Proxy -Name $_.Name -ProxyUrl $ProxyUrl
         }
         else {
             # Ask user if proxy should be used
@@ -100,14 +145,14 @@ function Get-KubectlCredentialsForAksClusters($aksClusters, $ProxyUrl, $SkipProx
                 $useProxy = Read-Host "Use proxy ($ProxyUrl) for cluster $($_.name)? (y/n)"
                 if ($useProxy -eq "y") {
                     # Set proxy for added cluster
-                    kubectl config set-cluster $_.name --proxy-url=$ProxyUrl
+                    Set-Kubectl-Cluster-Proxy -Name $_.Name -ProxyUrl $ProxyUrl
                 }
                 else {
                     # Specify alternative Proxy URL or ENTER for no proxy
                     $proxyUrlAlt = Read-Host "Specify alternative Proxy URL for cluster $($_.name) or ENTER for no proxy"
                     if ($proxyUrlAlt -ne "") {
                         # Set proxy for added cluster
-                        kubectl config set-cluster $_.name --proxy-url=$proxyUrlAlt
+                        Set-Kubectl-Cluster-Proxy -Name $_.Name -ProxyUrl $proxyUrlAlt
                     }
                 }
             }
@@ -123,17 +168,17 @@ function Test-ConnectionsToAksClusters($aksClusters) {
         # Write-Host "Testing connection to AKS cluster $($_.name):"
 
         # Set subscription context to that of the AKS cluster
-        az account set --subscription $_.subscriptionId --output none
+        Set-AzCliSubscription $_.subscriptionId
 
         # Test connection to the AKS cluster and display success or failure
-        $serverVersion = (kubectl version --context "$($_.name)-admin" -o json | ConvertFrom-Json).serverVersion
-        if ($null -ne $serverVersion) {
+        $serverVersionTest = Test-Kubectl-ServerVersion -Name $_.Name
+        if ($null -ne $serverVersionTest) {
             #  Print green checkmark and name of the AKS cluster
-            Write-Host "`e[32m√`e[0m $($_.name)"
+            Write-Host "Get-SuccessShortString $($_.name)"
         }
         else {
             # Print red cross and name of the AKS cluster
-            Write-Host "`e[31mX`e[0m $($_.name)"
+            Write-Host "Get-FailureShortString $($_.name)"
         }
     }
 }
