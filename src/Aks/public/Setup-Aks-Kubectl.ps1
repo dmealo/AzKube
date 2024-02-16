@@ -1,5 +1,5 @@
 # Setup-Aks-Kubectl.ps1
-# Description: This script gets kubectl credentials for all AKS clusters in all subscriptions and tests the connections to the clusters.
+# Description: This script gets kubectl credentials for selected or all AKS clusters in all subscriptions and tests the connections to the clusters.
 # Prerequisites: WinGet (install in Store for auto-updating, else static version via: `Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile winget.appxbundle ; Add-AppxPackage -Path winget.appxbundle`)
 
 [CmdletBinding()]
@@ -51,7 +51,7 @@ if ($SetupAllWithDefaults) {
     Show-ObjectArray $aksClusters Cyan
 }
 else {
-    $aksClusters = Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to get kubectl credentials for:"
+    $aksClusters = Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to get kubectl credentials for:" -MultiSelect:$true
 }
 
 # Get kubectl credentials for the selected AKS clusters

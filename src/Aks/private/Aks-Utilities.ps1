@@ -1,6 +1,6 @@
 
 
-# Create a class with ToString method to display AKS clusters as a simple menu
+# Create a class with ToString method to display AKS clusters
 class Cluster {
     [string]$Name
     [int]$Index
@@ -21,6 +21,27 @@ class Cluster {
     }
 }
 
+# Create a class with ToString method to display management actions
+class ManagementAction {
+    [string]$Name
+    [int]$Index
+    [string]$Description
+    [scriptblock]$Script
+    static [int]$LastId = 0
+
+    ManagementAction([string]$name, [string]$description, [scriptblock]$script) {
+        $this.Name = $name
+        $this.Index = [ManagementAction]::LastId + 1
+        [ManagementAction]::LastId = $this.Index
+        $this.Description = $description
+        $this.Script = $script
+    }
+
+    [string] ToString() {
+        return "$($this.Name) - $($this.Description) > $($this.Script)"
+    }
+}
+
 # Install Azure CLI using WinGet if not already installed
 function Install-AzureCli {
     if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
@@ -38,7 +59,7 @@ function Install-PSMenu {
 
 # Function to install kubectl using WinGet if not already installed
 function Install-Kubectl {
-     # Install kubectl using WinGet if not already installed
+    # Install kubectl using WinGet if not already installed
     if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
         winget install --id Kubernetes.kubectl -e
     }
@@ -61,7 +82,7 @@ function Set-AzCliSubscription ($subscriptionId) {
     az account set --subscription $subscriptionId --output none
 }
 
-# Function to display an array of objects as a simple menu
+# Function to display an array of objects
 function Show-ObjectArray($objects, $color) {
     $objects | ForEach-Object { Write-Host $_.ToString() -ForegroundColor $color }
 }
@@ -165,11 +186,6 @@ function Test-ConnectionsToAksClusters($aksClusters) {
     Write-Host
     Write-Host "Testing kubectl connections to the AKS clusters:"
     $aksClusters | ForEach-Object {
-        # Write-Host "Testing connection to AKS cluster $($_.name):"
-
-        # Set subscription context to that of the AKS cluster
-        Set-AzCliSubscription $_.subscriptionId
-
         # Test connection to the AKS cluster and display success or failure
         $serverVersionTest = Test-Kubectl-ServerVersion -Name $_.Name
         if ($null -ne $serverVersionTest) {
@@ -180,5 +196,69 @@ function Test-ConnectionsToAksClusters($aksClusters) {
             # Print red cross and name of the AKS cluster
             Write-Host "Get-FailureShortString $($_.name)"
         }
+    }
+}
+
+# Function to get the resource ID of an AKS cluster
+function Get-ClusterResourceIds($aksClusters) {
+    Write-Host
+    Write-Host "Resource ID of the selected AKS cluster(s):"
+    $aksClusters | ForEach-Object {
+        # Set subscription context to that of the AKS cluster
+        Set-AzCliSubscription $_.subscriptionId
+
+        # Get resource ID of the AKS cluster
+        $resourceId = az aks show --name $_.name --resource-group $_.resourceGroup --query id --output tsv
+        Write-Host "$($_.name): $resourceId"
+    }
+}
+
+# Function to update the AKS cluster resource(s) by ID(s)
+function Update-ClusterResources($aksClusters) {
+    Write-Host
+    $ignoreWarning = Read-Host "`e[31m!!`e[0m This action will update the selected AKS cluster(s) and may cause disruption depending on PDBs/HPAs/resources/activity. Continue? (y/n)"
+    if ($ignoreWarning -eq "y") {
+        Write-Host "Updating the selected AKS cluster(s):"
+        $aksClusters | ForEach-Object {
+            # Set subscription context to that of the AKS cluster
+            Set-AzCliSubscription $_.subscriptionId
+
+            # Update the AKS cluster
+            az resource update --ids $_.resourceId
+        }
+    }
+    else {
+        Write-Host "Action cancelled."
+    }
+}
+
+# Function to populate catalog of management actions
+function Get-ManagementActions {
+    [ManagementAction[]] $managementActions = @()
+    $managementActions += [ManagementAction]::new("Get-KubectlCredentialsForAksClusters", "Get kubectl credentials for the selected AKS cluster(s)", { Get-KubectlCredentialsForAksClusters $aksClusters $ProxyUrl -SkipProxyAll:$SkipProxyAll -SetupAllWithDefaults:$SetupAllWithDefaults })
+    $managementActions += [ManagementAction]::new("Test-ConnectionsToAksClusters", "Test connection(s) to the selected AKS cluster(s) using kubectl version command", { Test-ConnectionsToAksClusters $aksClusters })
+    $managementActions += [ManagementAction]::new("Get-ClusterResourceIds", "Get the resource ID(s) of the selected AKS cluster(s)", { Get-ClusterResourceIds $aksClusters })
+    $managementActions += [ManagementAction]::new("`e[31m!!`e[0m Update-ClusterResources", "Update the selected AKS cluster resource(s) by ID(s)", { Update-ClusterResources $aksClusters })
+    return $managementActions
+}
+
+# Function to invoke a management action on an array of AKS clusters
+function Invoke-ClusterAction {
+    param (
+        [ManagementAction]$Action,
+        [Cluster[]]$AksClusters,
+        [string]$ProxyUrl,
+        [switch]$SkipProxyAll,
+        [switch]$SetupAllWithDefaults
+    )
+
+    Write-Host
+    Write-Host "Executing action: $($Action.Name) - $($Action.Description) on the selected AKS cluster(s):"
+    $AksClusters | ForEach-Object {
+        # Set subscription context to that of the AKS cluster
+        Set-AzCliSubscription $_.SubscriptionId
+
+        # Execute the selected action on the AKS cluster
+        Invoke-Command $Action.Script
     }
 }
