@@ -43,6 +43,8 @@ Install-AzureCli
 
 Install-PsMenu
 do {
+    # Create and use a new TenantList object to get all tenants
+    ([TenantList]::New()).Select()
 
     # Get all AKS clusters into a variable using Azure Resource Graph
     $aksClusters = Get-AksClusters

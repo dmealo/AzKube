@@ -47,3 +47,30 @@ function Show-AksCluster-Actions {
     # Return the selected ManagementAction object
     return $selectedManagementAction
 }
+
+function Show-Tenants {
+    param (
+        [Tenant[]]$Tenants,
+        [string]$Title = "Select tenant:"
+    )
+    Write-Host
+    Write-Host $Title
+    Write-Host
+    # Convert Tenant objects to strings
+    Write-Debug "Tenants: $($this.Tenants.Count)"
+    $menuItems = $this.Tenants | ForEach-Object { $_.ToString() }
+    # Display tenants as a simple menu for selection
+    $selectedTenant = Show-Menu -MenuItems $menuItems -InitialSelection 0
+    # Find the selected Tenant object
+    $selectedTenantObject = $this.Tenants | Where-Object { $_.ToString() -eq $selectedTenant }
+    # Check that a valid tenant was selected
+    if ($null -eq $selectedTenantObject) {
+        Write-Host
+        Write-Host "No valid tenant selected."
+        return $null
+    }
+    Write-Host
+    Write-Host "Selected tenant: $selectedTenant"
+    # Return the selected Tenant object
+    return $selectedTenantObject
+}

@@ -1,6 +1,6 @@
 
 
-# Create a class with ToString method to display AKS clusters
+# Class with ToString method to display AKS clusters
 class Cluster {
     [string]$Name
     [int]$Index
@@ -21,7 +21,7 @@ class Cluster {
     }
 }
 
-# Create a class with ToString method to display management actions
+# Class with ToString method to display management actions
 class ManagementAction {
     [string]$Name
     [int]$Index
@@ -42,11 +42,59 @@ class ManagementAction {
     }
 }
 
+# Class to define Azure Tenant objects
+class Tenant {
+    [string]$Id
+    [string]$Name
+    [int]$Index
+    static [int]$LastId = 0
+
+    Tenant([string]$id, [string]$name) {
+        $this.Id = $id
+        $this.Name = $name
+        $this.Index = [Tenant]::LastId + 1
+        [Tenant]::LastId = $this.Index
+    }
+
+    [string] ToString() {
+        return "$($this.Name) - $($this.Id)"
+    }
+}
+
+# Class to allow use of Azure Tenant objects
+class TenantList {
+    [Tenant[]]$Tenants
+
+    TenantList() {
+        Invoke-AzureLoginReconciliation
+        az account list | ConvertFrom-Json | Select-Object -ExpandProperty tenantId -Unique | ForEach-Object { $this.Tenants += [Tenant]::new($_, $(Get-AzTenant -TenantId $_).Name) }
+        Write-Debug "Tenants found: $($this.Tenants.Count)"
+    }
+    
+    Select() {
+        Write-Debug "Tenants: $($this.Tenants.Count)"
+        $selectedTenant = Show-Tenants -MenuItems $this.Tenants
+        # Set the selected tenant as the default tenant in Azure CLI and Azure PowerShell module
+        if ($null -ne $selectedTenant) {
+            Connect-AzureCli -tenantId $selectedTenant.Id
+            Connect-Az -tenantId $selectedTenant.Id
+        }
+    }
+}
+
+
 # Install Azure CLI using WinGet if not already installed
 function Install-AzureCli {
     if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
         Write-Host "Installing Azure CLI using WinGet..."
         winget install --id Microsoft.AzureCLI -e
+    }
+}
+
+# Install Azure Powershell module if not already installed
+function Install-AzModule {
+    if (-not (Get-Command Connect-AzAccount -ErrorAction SilentlyContinue)) {
+        Install-Module -Name Az -Force
     }
 }
 
@@ -66,15 +114,72 @@ function Install-Kubectl {
 }
 
 # Function to connect to Azure CLI (login if not already logged in)
-function Connect-AzureCli {
+function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
 
     # Check if already logged into Azure CLI
     $azAccount = az account show --output json
-    if ($null -eq $azAccount) {
-        # Log into Azure with minimal output
-        az login --output none
+    if ($null -eq $azAccount -or $forceReconnect) {
+        if ($null -ne $tenantId) {
+            # Log into Azure with minimal output with the specified tenant ID if provided
+            Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
+            az login --allow-no-subscriptions --output none --tenant $tenantId
+        } else {
+            # Log into Azure with minimal output
+            Write-Host "Logging into Azure from Azure CLI..."
+            az login --allow-no-subscriptions --output none
+        }
+    }
+    elseif ($null -ne $tenantId) {
+        # Log into Azure with minimal output with the specified tenant ID if provided
+        $tenantDifference = az account list | ConvertFrom-Json | Where-Object { $_.tenantId -ne $tenantId }
+        if ($null -ne $tenantDifference) {
+            Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
+            az login --allow-no-subscriptions --output none --tenant $tenantId
+        }
     }
 }
+
+# Function to connect to Azure using Azure PowerShell module (login if not already logged in)
+function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
+    $azAccount = Get-AzContext
+    if ($null -eq $azAccount -or $forceReconnect -or ($null -ne $tenantId -and $azAccount.Tenant.Id -ne $tenantId)) {
+        if ($null -ne $tenantId) {
+            Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId"
+            Connect-AzAccount -Tenant $tenantId
+        } else {
+            Write-Host "Logging into from Azure PowerShell..."
+            Connect-AzAccount
+        }
+    }
+}
+
+# Function to reconcile Azure CLI and Azure PowerShell module logins
+function Invoke-AzureLoginReconciliation {
+    Install-AzModule
+    # Check if already logged into Azure PowerShell (Az module) and Azure CLI
+    $azContext = Get-AzContext
+    $azTenant = (Get-AzTenant).Name
+    $azAccount = az account show --output json | ConvertFrom-Json
+    if ($null -eq $azContext -or $null -eq $azAccount -or $null -eq $azTenant -or $null -eq $azTenant[0] ) {
+        Connect-AzureCli -forceReconnect $true
+        Connect-Az -forceReconnect $true
+    }
+    elseif ($null -ne $azAccount -and $null -ne $azContext -and $azAccount.user.name -ne $azContext.Account.id) {
+        # Prompt user to choose which login to keep by name
+        $azAccountName = $azAccount.user.name
+        $azContextName = $azContext.Account.id
+        $accountToKeep = Read-Host "Which login do you want to keep? (1) $azAccountName or (2) $azContextName"
+        if ($accountToKeep -eq "1") {
+            # Log into Azure using Azure PowerShell module
+            Connect-Az -forceReconnect
+        }
+        else {
+            # Log into Azure using Azure CLI
+            Connect-AzureCli -forceReconnect
+        }
+    }    
+}
+
 
 # Function to set Azure CLI subscription context
 function Set-AzCliSubscription ($subscriptionId) {
@@ -93,7 +198,7 @@ function Get-AksClusters {
     [Cluster[]] $aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data | ForEach-Object { [Cluster]::new($_.name, $_.subscriptionId, $_.resourceGroup) }
 
     if ($aksClusters.Count -eq 0) {
-        Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor Orange
+        Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor DarkYellow
         return $null
     }
 
