@@ -194,6 +194,8 @@ function Show-ObjectArray($objects, $color) {
 
 # Get all AKS clusters into a variable using Azure Resource Graph
 function Get-AksClusters {
+    Connect-AzureCli
+    
     # Get all AKS clusters into a variable using Azure Resource Graph
     [Cluster[]] $aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data | ForEach-Object { [Cluster]::new($_.name, $_.subscriptionId, $_.resourceGroup) }
 
