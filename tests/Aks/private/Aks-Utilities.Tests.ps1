@@ -258,7 +258,7 @@ Describe "Aks-Utilities Tests" {
             $result = Get-SuccessShortString
 
             # Assert
-            $result | Should -Be "`e[32m√`e[0m"
+            $result | Should -Be "`e[32m√`e[0m Success"
         }
     }
 
@@ -268,7 +268,7 @@ Describe "Aks-Utilities Tests" {
             $result = Get-FailureShortString
 
             # Assert
-            $result | Should -Be "`e[31mX`e[0m"
+            $result | Should -Be "`e[31mX`e[0m Failure"
         }
     }
 
