@@ -101,12 +101,12 @@ function Test-Kubectl-ServerVersion($Name) {
 
 # Function to get a string with a green checkmark
 function Get-SuccessShortString () {
-    return "`e[32m√`e[0m"
+    return "`e[32m√`e[0m Success"
 }
 
 # Function to get a string with a red cross
 function Get-FailureShortString () {
-    return "`e[31mX`e[0m"
+    return "`e[31mX`e[0m Failure"
 }
 
 # Function to get kubectl credentials for an array of AKS clusters
@@ -176,11 +176,11 @@ function Test-ConnectionsToAksClusters($aksClusters) {
         $serverVersionTest = Test-Kubectl-ServerVersion -Name $_.Name
         if ($null -ne $serverVersionTest) {
             #  Print green checkmark and name of the AKS cluster
-            Write-Host "Get-SuccessShortString $($_.name)"
+            Write-Host "$(Get-SuccessShortString $($_.name)): $($_.Name)"
         }
         else {
             # Print red cross and name of the AKS cluster
-            Write-Host "Get-FailureShortString $($_.name)"
+            Write-Host "$(Get-FailureShortString $($_.name)): $($_.Name)"
         }
     }
 }
