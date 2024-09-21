@@ -52,7 +52,7 @@ do {
         exit 0
     }
     # Show AKS clusters as a simple menu for selection
-    $aksClusters = & Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to get kubectl credentials for:"
+    $aksClusters = & Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to manage:"  -MultiSelect:$true
 
     if ($aksClusters.Count -gt 0) {
         # Show actions menu
