@@ -40,11 +40,20 @@ param (
 
 
 Install-AzureCli
-
 Install-PsMenu
+
 do {
     # Create and use a new TenantList object to get all tenants
-    ([TenantList]::New()).Select()
+    Write-Host
+    Write-Host "Loading interface..." -ForegroundColor Cyan
+    $tenant = [TenantList]::New()
+    $tenant.Select()
+    if ($null -eq $tenant) {
+        exit 0
+    }
+    if ($null -eq $tenant.SelectedTenant) {
+        return
+    }
 
     # Get all AKS clusters into a variable using Azure Resource Graph
     $aksClusters = Get-AksClusters
@@ -60,11 +69,12 @@ do {
 
         # Perform the selected action on the selected AKS clusters
         if ($null -ne $action) {
-            Invoke-ClusterAction -Action $action -AksClusters $aksClusters -ProxyUrl $ProxyUrl -SkipProxyAll:$SkipProxyAll
+            Invoke-ClusterAction -Action $action -AksClusters $aksClusters -ProxyUrl $ProxyUrl -SkipProxyAll:$SkipProxyAll -SkipTestConnections:$SkipTestConnections
         }
     } 
-} while ($aksClusters.Count -gt 0 -and $null -ne $action)
+} while ($aksClusters.Count -gt 0 -and $null -ne $action -and $null -ne $tenant.SelectedTenant)
+
 
 Write-Host
-Write-Host "Exiting. Thanks for stopping by!" -ForegroundColor Blue
+Write-Host $("$([System.Text.Encoding]::UTF8.GetString([byte[]](240, 159, 143, 131))) Exiting. Thanks for stopping by!") -ForegroundColor Yellow
 Write-Host

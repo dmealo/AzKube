@@ -10,7 +10,7 @@ function Show-ClusterMenu {
         [switch]$MultiSelect
     )
     Write-Host
-    Write-Host $Title
+    Write-Host $Title -ForegroundColor Cyan
     Write-Host
     # Display AKS clusters as a simple menu for selection
     $clusterIndexes = $($Clusters | ForEach-Object { [int]$Clusters.IndexOf($_) })
@@ -29,7 +29,7 @@ function Show-AksCluster-Actions {
         [string]$Title = "Select action to perform on AKS cluster(s):"
     )
     Write-Host
-    Write-Host $Title
+    Write-Host $Title -ForegroundColor Cyan
     Write-Host
     # Convert ManagementAction objects to strings
     $menuItems = $Actions | ForEach-Object { $_.ToString() }
@@ -51,11 +51,11 @@ function Show-AksCluster-Actions {
 function Show-Tenants {
     param (
         [Tenant[]]$Tenants,
-        [string]$Title = "Select tenant:"
+        [string]$Title = "Select tenant or hit Esc to exit:"
     )
     Clear-Host
     Write-Host
-    Write-Host $Title
+    Write-Host $Title -ForegroundColor Cyan
     Write-Host
     # Convert Tenant objects to strings
     Write-Debug "Tenants: $($this.Tenants.Count)"
@@ -67,7 +67,7 @@ function Show-Tenants {
     # Check that a valid tenant was selected
     if ($null -eq $selectedTenantObject) {
         Write-Host
-        Write-Host "No valid tenant selected. May use default tenant." -ForegroundColor Yellow
+        Write-Host "No valid tenant selected. Exiting." -ForegroundColor Yellow
         return $null
     }
     Write-Host

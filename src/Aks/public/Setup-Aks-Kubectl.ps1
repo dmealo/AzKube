@@ -35,14 +35,13 @@ param (
 
 
 Install-AzureCli
+Install-PsMenu
 
 # Get all AKS clusters into a variable using Azure Resource Graph
 $aksClusters = Get-AksClusters
 if ($null -eq $aksClusters) {
     exit 0
 }
-
-Install-PsMenu
 
 # Show AKS clusters as a simple menu for selection
 if ($SetupAllWithDefaults) {

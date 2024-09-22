@@ -64,21 +64,20 @@ class Tenant {
 # Class to allow use of Azure Tenant objects
 class TenantList {
     [Tenant[]]$Tenants
+    [Tenant]$SelectedTenant
 
     TenantList() {
         Invoke-AzureLoginReconciliation
-        az account list | ConvertFrom-Json | Select-Object -ExpandProperty tenantId -Unique | ForEach-Object { $this.Tenants += [Tenant]::new($_, $(Get-AzTenant -TenantId $_).Name) }
+        az account list --only-show-errors | ConvertFrom-Json | Select-Object -ExpandProperty tenantId -Unique | ForEach-Object { $this.Tenants += [Tenant]::new($_, $(Get-AzTenant -TenantId $_).Name) }
         Write-Debug "Tenants found: $($this.Tenants.Count)"
     }
     
     Select() {
         Write-Debug "Tenants: $($this.Tenants.Count)"
-        $selectedTenant = Show-Tenants -MenuItems $this.Tenants
+        $this.SelectedTenant = Show-Tenants -MenuItems $this.Tenants
         # Set the selected tenant as the default tenant in Azure CLI and Azure PowerShell module
-        if ($null -ne $selectedTenant) {
-            Connect-AzureCli -tenantId $selectedTenant.Id
-            Connect-Az -tenantId $selectedTenant.Id
-        }
+        Connect-AzureCli -tenantId $this.SelectedTenant.Id
+        Connect-Az -tenantId $this.SelectedTenant.Id
     }
 }
 
@@ -117,25 +116,25 @@ function Install-Kubectl {
 function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
 
     # Check if already logged into Azure CLI
-    $azAccount = az account show --output json
+    $azAccount = az account show 2>$null --output json
     if (($null -eq $azAccount) -or $forceReconnect) {
         if ($null -ne $tenantId) {
             # Log into Azure with minimal output with the specified tenant ID if provided
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
-            az login --allow-no-subscriptions --output none --tenant $tenantId
+            az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
         }
         else {
             # Log into Azure with minimal output
             Write-Host "Logging into Azure from Azure CLI..."
-            az login --allow-no-subscriptions --output none
+            az login --allow-no-subscriptions --output none --only-show-errors
         }
     }
     elseif ($null -ne $tenantId) {
         # Log into Azure with minimal output with the specified tenant ID if provided
-        $tenantMatches = az account list | ConvertFrom-Json | Where-Object { $_.tenantId -eq $tenantId }
+        $tenantMatches = az account list --only-show-errors | ConvertFrom-Json | Where-Object { $_.tenantId -eq $tenantId }
         if (($null -eq $tenantMatches -or $tenantMatches.Count -eq 0) -or $forceReconnect) {
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
-            az login --allow-no-subscriptions --output none --tenant $tenantId
+            az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
         }
     }
 }
@@ -146,11 +145,11 @@ function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
     if ($null -eq $azAccount -or $forceReconnect -or ($null -ne $tenantId -and $azAccount.Tenant.Id -ne $tenantId)) {
         if ($null -ne $tenantId) {
             Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId"
-            Connect-AzAccount -Tenant $tenantId
+            Connect-AzAccount -Tenant $tenantId -only -WarningAction Ignore
         }
         else {
-            Write-Host "Logging into from Azure PowerShell..."
-            Connect-AzAccount
+            Write-Host "Logging into Azure from Azure PowerShell..."
+            Connect-AzAccount -WarningAction Ignore
         }
     }
 }
@@ -158,10 +157,11 @@ function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
 # Function to reconcile Azure CLI and Azure PowerShell module logins
 function Invoke-AzureLoginReconciliation {
     Install-AzModule
+    Install-AzureCli
     # Check if already logged into Azure PowerShell (Az module) and Azure CLI
     $azContext = Get-AzContext
-    $azTenant = (Get-AzTenant).Name
-    $azAccount = az account show --output json | ConvertFrom-Json
+    $azTenant = (Get-AzTenant 2>$null).Name
+    $azAccount = az account show --output json 2>$null | ConvertFrom-Json
     if ($null -eq $azContext -or $null -eq $azAccount -or $null -eq $azTenant -or $null -eq $azTenant[0] ) {
         Connect-AzureCli -forceReconnect $true
         Connect-Az -forceReconnect $true
@@ -365,4 +365,7 @@ function Invoke-ClusterAction {
     Write-Host "Executing action: $($Action.Name) - $($Action.Description) on the selected AKS cluster(s):"
     # Execute the selected action on the AKS cluster
     Invoke-Command $Action.Script -ArgumentList $AksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults
+    if (!$SkipTestConnections -and $Action.Name -eq "Get-KubectlCredentialsForAksClusters") {
+        Test-ConnectionsToAksClusters $AksClusters
+    }
 }
