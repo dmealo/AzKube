@@ -118,7 +118,7 @@ function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
 
     # Check if already logged into Azure CLI
     $azAccount = az account show --output json
-    if ($null -eq $azAccount -or $forceReconnect) {
+    if (($null -eq $azAccount) -or $forceReconnect) {
         if ($null -ne $tenantId) {
             # Log into Azure with minimal output with the specified tenant ID if provided
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
@@ -131,8 +131,8 @@ function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
     }
     elseif ($null -ne $tenantId) {
         # Log into Azure with minimal output with the specified tenant ID if provided
-        $tenantDifference = az account list | ConvertFrom-Json | Where-Object { $_.tenantId -ne $tenantId }
-        if ($null -ne $tenantDifference) {
+        $tenantMatches = az account list | ConvertFrom-Json | Where-Object { $_.tenantId -eq $tenantId }
+        if (($null -eq $tenantMatches -or $tenantMatches.Count -eq 0) -or $forceReconnect) {
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
             az login --allow-no-subscriptions --output none --tenant $tenantId
         }
@@ -342,10 +342,10 @@ function Update-ClusterResources($aksClusters) {
 # Function to populate catalog of management actions
 function Get-ManagementActions {
     [ManagementAction[]] $managementActions = @()
-    $managementActions += [ManagementAction]::new("Get-KubectlCredentialsForAksClusters", "Get kubectl credentials for the selected AKS cluster(s)", { Get-KubectlCredentialsForAksClusters $aksClusters $ProxyUrl -SkipProxyAll:$SkipProxyAll -SetupAllWithDefaults:$SetupAllWithDefaults })
-    $managementActions += [ManagementAction]::new("Test-ConnectionsToAksClusters", "Test connection(s) to the selected AKS cluster(s) using kubectl version command", { Test-ConnectionsToAksClusters $aksClusters })
-    $managementActions += [ManagementAction]::new("Get-ClusterResourceIds", "Get the resource ID(s) of the selected AKS cluster(s)", { Get-ClusterResourceIds $aksClusters })
-    $managementActions += [ManagementAction]::new("`e[31m!!`e[0m Update-ClusterResources", "Update the selected AKS cluster resource(s) by ID(s)", { Update-ClusterResources $aksClusters })
+    $managementActions += [ManagementAction]::new("Get-KubectlCredentialsForAksClusters", "Get kubectl credentials for the selected AKS cluster(s)", { param ($aksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults) Get-KubectlCredentialsForAksClusters $aksClusters $ProxyUrl -SkipProxyAll:$SkipProxyAll -SetupAllWithDefaults:$SetupAllWithDefaults })
+    $managementActions += [ManagementAction]::new("Test-ConnectionsToAksClusters", "Test connection(s) to the selected AKS cluster(s) using kubectl version command", { param ($aksClusters) Test-ConnectionsToAksClusters $aksClusters })
+    $managementActions += [ManagementAction]::new("Get-ClusterResourceIds", "Get the resource ID(s) of the selected AKS cluster(s)", { param ($aksClusters) Get-ClusterResourceIds $aksClusters })
+    $managementActions += [ManagementAction]::new("`e[31m!!`e[0m Update-ClusterResources", "Update the selected AKS cluster resource(s) by ID(s)", { param ($aksClusters) Update-ClusterResources $aksClusters })
     return $managementActions
 }
 
@@ -366,6 +366,6 @@ function Invoke-ClusterAction {
         Set-AzCliSubscription $_.SubscriptionId
 
         # Execute the selected action on the AKS cluster
-        Invoke-Command $Action.Script
+        Invoke-Command $Action.Script -ArgumentList $_, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults
     }
 }

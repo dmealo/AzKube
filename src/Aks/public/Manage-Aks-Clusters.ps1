@@ -56,11 +56,11 @@ do {
 
     if ($aksClusters.Count -gt 0) {
         # Show actions menu
-        $action = Show-AksCluster-Actions -Actions $(Get-ManagementActions)
+        [ManagementAction]$action = Show-AksCluster-Actions -Actions $(Get-ManagementActions)
 
         # Perform the selected action on the selected AKS clusters
         if ($null -ne $action) {
-            Invoke-ClusterAction -Action $action
+            Invoke-ClusterAction -Action $action -AksClusters $aksClusters -ProxyUrl $ProxyUrl -SkipProxyAll:$SkipProxyAll
         }
     } 
 } while ($aksClusters.Count -gt 0 -and $null -ne $action)

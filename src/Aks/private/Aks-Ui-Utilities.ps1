@@ -38,7 +38,7 @@ function Show-AksCluster-Actions {
     Write-Host
     Write-Host "Selected action: $selectedAction"
     # Find the selected ManagementAction object
-    $selectedManagementAction = $Actions | Where-Object { $_.ToString() -eq $selectedAction }
+    [ManagementAction]$selectedManagementAction = $Actions | Where-Object { $_.ToString() -eq $selectedAction }
     # Check that a valid action was selected
     if ($null -eq $selectedManagementAction) {
         Write-Host "No valid action selected."
