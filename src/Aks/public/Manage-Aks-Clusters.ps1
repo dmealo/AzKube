@@ -7,7 +7,7 @@ param (
     # Proxy URL to be used for all AKS clusters
     [Parameter()]
     [string]
-    $ProxyUrl = "http://fpx-primary.valtech.com:8080",
+    $ProxyUrl = "",
 
     # Skip setting proxy on any AKS cluster
     [Parameter()]
@@ -38,6 +38,7 @@ param (
 . "$PSScriptRoot\..\private\Aks-Utilities.ps1"
 . "$PSScriptRoot\..\private\Aks-Ui-Utilities.ps1"
 
+$ProxyUrl = Get-DefaultProxyUrl -ProxyUrl $ProxyUrl
 
 Install-AzureCli
 Install-PsMenu

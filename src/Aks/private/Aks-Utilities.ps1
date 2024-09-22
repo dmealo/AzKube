@@ -369,3 +369,22 @@ function Invoke-ClusterAction {
         Test-ConnectionsToAksClusters $AksClusters
     }
 }
+
+function Get-DefaultProxyUrl ($ProxyUrlFromArgs) {
+    # Set up the storage of a default value for the proxy URL in the user's variables
+    $ProxyUrl = $([Environment]::GetEnvironmentVariable('AzKubeDefaultProxyUrl', 'User'))
+    # If the variable does not exist, prompt the user to set the default proxy URL
+    if ($null -eq $ProxyUrl -or $ProxyUrl -eq "" -or ($ProxyUrlFromArgs -ne "" -and $ProxyUrlFromArgs -ne $ProxyUrl)) {
+        if ($null -ne $ProxyUrlFromArgs -and $ProxyUrlFromArgs -ne "") {
+            $ProxyUrl = $ProxyUrlFromArgs
+        }
+        else {
+            $ProxyUrl = Read-Host "Enter the default proxy URL suggestion for AKS clusters (used without prompting w/ -SetupAllWithDefaults parameter)"
+        }
+        # Set permanent system environment variable for the default proxy URL
+        [Environment]::SetEnvironmentVariable("AzKubeDefaultProxyUrl", $ProxyUrl, "User")
+        # Set the variable in the current session
+        $env:AzKubeDefaultProxyUrl = $ProxyUrl
+    }
+    return $ProxyUrl
+}
