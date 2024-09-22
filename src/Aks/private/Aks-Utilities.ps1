@@ -123,7 +123,8 @@ function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
             # Log into Azure with minimal output with the specified tenant ID if provided
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
             az login --allow-no-subscriptions --output none --tenant $tenantId
-        } else {
+        }
+        else {
             # Log into Azure with minimal output
             Write-Host "Logging into Azure from Azure CLI..."
             az login --allow-no-subscriptions --output none
@@ -146,7 +147,8 @@ function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
         if ($null -ne $tenantId) {
             Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId"
             Connect-AzAccount -Tenant $tenantId
-        } else {
+        }
+        else {
             Write-Host "Logging into from Azure PowerShell..."
             Connect-AzAccount
         }
@@ -361,11 +363,6 @@ function Invoke-ClusterAction {
 
     Write-Host
     Write-Host "Executing action: $($Action.Name) - $($Action.Description) on the selected AKS cluster(s):"
-    $AksClusters | ForEach-Object {
-        # Set subscription context to that of the AKS cluster
-        Set-AzCliSubscription $_.SubscriptionId
-
-        # Execute the selected action on the AKS cluster
-        Invoke-Command $Action.Script -ArgumentList $_, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults
-    }
+    # Execute the selected action on the AKS cluster
+    Invoke-Command $Action.Script -ArgumentList $AksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults
 }

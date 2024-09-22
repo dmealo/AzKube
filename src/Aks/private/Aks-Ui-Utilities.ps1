@@ -53,6 +53,7 @@ function Show-Tenants {
         [Tenant[]]$Tenants,
         [string]$Title = "Select tenant:"
     )
+    Clear-Host
     Write-Host
     Write-Host $Title
     Write-Host
@@ -66,7 +67,7 @@ function Show-Tenants {
     # Check that a valid tenant was selected
     if ($null -eq $selectedTenantObject) {
         Write-Host
-        Write-Host "No valid tenant selected."
+        Write-Host "No valid tenant selected. May use default tenant." -ForegroundColor Yellow
         return $null
     }
     Write-Host
