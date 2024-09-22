@@ -50,7 +50,10 @@ if ($SetupAllWithDefaults) {
     Show-ObjectArray $aksClusters Cyan
 }
 else {
-    $aksClusters = Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to get kubectl credentials for:" -MultiSelect:$true
+    $aksClusters = Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to get kubectl credentials for or Esc to exit:" -MultiSelect:$true
+    if ($null -eq $aksClusters) {
+        exit 0
+    }
 }
 
 # Get kubectl credentials for the selected AKS clusters
