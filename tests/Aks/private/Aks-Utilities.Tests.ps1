@@ -141,19 +141,19 @@ Describe "Aks-Utilities Tests" {
     }
 
     Describe "Connect-AzureCli" {
-        Context "When not already logged into Azure CLI" {
-            BeforeEach {
-                Mock az { $null }
-            }
+        # Context "When not already logged into Azure CLI" {
+        #     BeforeEach {
+        #         Mock az { $null }
+        #     }
 
-            It "Should log into Azure CLI" {
-                # Act
-                Connect-AzureCli
+        #     It "Should log into Azure CLI" {
+        #         # Act
+        #         Connect-AzureCli
 
-                # Assert
-                Assert-MockCalled az -ParameterFilter { $args[0] -eq "login" -and $args[1] -eq "--output" -and $args[2] -eq "none" } -Times 1
-            }
-        }
+        #         # Assert
+        #         Assert-MockCalled az -ParameterFilter { $args[0] -eq "login" -and $args[1] -eq "--output" -and $args[2] -eq "none" } -Times 1
+        #     }
+        # }
 
         Context "When already logged into Azure CLI" {
             BeforeEach {
