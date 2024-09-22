@@ -1,6 +1,6 @@
 
 
-# Create a class with ToString method to display AKS clusters as a simple menu
+# Class with ToString method to display AKS clusters
 class Cluster {
     [string]$Name
     [int]$Index
@@ -21,11 +21,79 @@ class Cluster {
     }
 }
 
+# Class with ToString method to display management actions
+class ManagementAction {
+    [string]$Name
+    [int]$Index
+    [string]$Description
+    [scriptblock]$Script
+    static [int]$LastId = 0
+
+    ManagementAction([string]$name, [string]$description, [scriptblock]$script) {
+        $this.Name = $name
+        $this.Index = [ManagementAction]::LastId + 1
+        [ManagementAction]::LastId = $this.Index
+        $this.Description = $description
+        $this.Script = $script
+    }
+
+    [string] ToString() {
+        return "$($this.Name) - $($this.Description) > $($this.Script)"
+    }
+}
+
+# Class to define Azure Tenant objects
+class Tenant {
+    [string]$Id
+    [string]$Name
+    [int]$Index
+    static [int]$LastId = 0
+
+    Tenant([string]$id, [string]$name) {
+        $this.Id = $id
+        $this.Name = $name
+        $this.Index = [Tenant]::LastId + 1
+        [Tenant]::LastId = $this.Index
+    }
+
+    [string] ToString() {
+        return "$($this.Name) - $($this.Id)"
+    }
+}
+
+# Class to allow use of Azure Tenant objects
+class TenantList {
+    [Tenant[]]$Tenants
+    [Tenant]$SelectedTenant
+
+    TenantList() {
+        Invoke-AzureLoginReconciliation
+        az account list --only-show-errors | ConvertFrom-Json | Select-Object -ExpandProperty tenantId -Unique | ForEach-Object { $this.Tenants += [Tenant]::new($_, $(Get-AzTenant -TenantId $_).Name) }
+        Write-Debug "Tenants found: $($this.Tenants.Count)"
+    }
+    
+    Select() {
+        Write-Debug "Tenants: $($this.Tenants.Count)"
+        $this.SelectedTenant = Show-Tenants -MenuItems $this.Tenants
+        # Set the selected tenant as the default tenant in Azure CLI and Azure PowerShell module
+        Connect-AzureCli -tenantId $this.SelectedTenant.Id
+        Connect-Az -tenantId $this.SelectedTenant.Id
+    }
+}
+
+
 # Install Azure CLI using WinGet if not already installed
 function Install-AzureCli {
     if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
         Write-Host "Installing Azure CLI using WinGet..."
         winget install --id Microsoft.AzureCLI -e
+    }
+}
+
+# Install Azure Powershell module if not already installed
+function Install-AzModule {
+    if (-not (Get-Command Connect-AzAccount -ErrorAction SilentlyContinue)) {
+        Install-Module -Name Az -Force
     }
 }
 
@@ -38,22 +106,82 @@ function Install-PSMenu {
 
 # Function to install kubectl using WinGet if not already installed
 function Install-Kubectl {
-     # Install kubectl using WinGet if not already installed
+    # Install kubectl using WinGet if not already installed
     if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
         winget install --id Kubernetes.kubectl -e
     }
 }
 
 # Function to connect to Azure CLI (login if not already logged in)
-function Connect-AzureCli {
+function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
 
     # Check if already logged into Azure CLI
-    $azAccount = az account show --output json
-    if ($null -eq $azAccount) {
-        # Log into Azure with minimal output
-        az login --output none
+    $azAccount = az account show 2>$null --output json
+    if (($null -eq $azAccount) -or $forceReconnect) {
+        if ($null -ne $tenantId) {
+            # Log into Azure with minimal output with the specified tenant ID if provided
+            Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
+            az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
+        }
+        else {
+            # Log into Azure with minimal output
+            Write-Host "Logging into Azure from Azure CLI..."
+            az login --allow-no-subscriptions --output none --only-show-errors
+        }
+    }
+    elseif ($null -ne $tenantId) {
+        # Log into Azure with minimal output with the specified tenant ID if provided
+        $tenantMatches = az account list --only-show-errors | ConvertFrom-Json | Where-Object { $_.tenantId -eq $tenantId }
+        if (($null -eq $tenantMatches -or $tenantMatches.Count -eq 0) -or $forceReconnect) {
+            Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
+            az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
+        }
     }
 }
+
+# Function to connect to Azure using Azure PowerShell module (login if not already logged in)
+function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
+    $azAccount = Get-AzContext
+    if ($null -eq $azAccount -or $forceReconnect -or ($null -ne $tenantId -and $azAccount.Tenant.Id -ne $tenantId)) {
+        if ($null -ne $tenantId) {
+            Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId"
+            Connect-AzAccount -Tenant $tenantId -only -WarningAction Ignore
+        }
+        else {
+            Write-Host "Logging into Azure from Azure PowerShell..."
+            Connect-AzAccount -WarningAction Ignore
+        }
+    }
+}
+
+# Function to reconcile Azure CLI and Azure PowerShell module logins
+function Invoke-AzureLoginReconciliation {
+    Install-AzModule
+    Install-AzureCli
+    # Check if already logged into Azure PowerShell (Az module) and Azure CLI
+    $azContext = Get-AzContext
+    $azTenant = (Get-AzTenant 2>$null).Name
+    $azAccount = az account show --output json 2>$null | ConvertFrom-Json
+    if ($null -eq $azContext -or $null -eq $azAccount -or $null -eq $azTenant -or $null -eq $azTenant[0] ) {
+        Connect-AzureCli -forceReconnect $true
+        Connect-Az -forceReconnect $true
+    }
+    elseif ($null -ne $azAccount -and $null -ne $azContext -and $azAccount.user.name -ne $azContext.Account.id) {
+        # Prompt user to choose which login to keep by name
+        $azAccountName = $azAccount.user.name
+        $azContextName = $azContext.Account.id
+        $accountToKeep = Read-Host "Which login do you want to keep? (1) $azAccountName or (2) $azContextName"
+        if ($accountToKeep -eq "1") {
+            # Log into Azure using Azure PowerShell module
+            Connect-Az -forceReconnect
+        }
+        else {
+            # Log into Azure using Azure CLI
+            Connect-AzureCli -forceReconnect
+        }
+    }    
+}
+
 
 # Function to set Azure CLI subscription context
 function Set-AzCliSubscription ($subscriptionId) {
@@ -61,7 +189,7 @@ function Set-AzCliSubscription ($subscriptionId) {
     az account set --subscription $subscriptionId --output none
 }
 
-# Function to display an array of objects as a simple menu
+# Function to display an array of objects
 function Show-ObjectArray($objects, $color) {
     $objects | ForEach-Object { Write-Host $_.ToString() -ForegroundColor $color }
 }
@@ -74,7 +202,7 @@ function Get-AksClusters {
     [Cluster[]] $aksClusters = (az graph query -q "where type == 'microsoft.containerservice/managedclusters' | project name, subscriptionId, resourceGroup" | ConvertFrom-Json).data | ForEach-Object { [Cluster]::new($_.name, $_.subscriptionId, $_.resourceGroup) }
 
     if ($aksClusters.Count -eq 0) {
-        Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor Orange
+        Write-Host "No AKS clusters found to get kubectl credentials for. Verify that you have logged into the correct Azure subscription(s) with permission to access AKS clusters and retry." -ForegroundColor DarkYellow
         return $null
     }
 
@@ -167,11 +295,6 @@ function Test-ConnectionsToAksClusters($aksClusters) {
     Write-Host
     Write-Host "Testing kubectl connections to the AKS clusters:"
     $aksClusters | ForEach-Object {
-        # Write-Host "Testing connection to AKS cluster $($_.name):"
-
-        # Set subscription context to that of the AKS cluster
-        Set-AzCliSubscription $_.subscriptionId
-
         # Test connection to the AKS cluster and display success or failure
         $serverVersionTest = Test-Kubectl-ServerVersion -Name $_.Name
         if ($null -ne $serverVersionTest) {
@@ -183,4 +306,85 @@ function Test-ConnectionsToAksClusters($aksClusters) {
             Write-Host "$(Get-FailureShortString $($_.name)): $($_.Name)"
         }
     }
+}
+
+# Function to get the resource ID of an AKS cluster
+function Get-ClusterResourceIds($aksClusters) {
+    Write-Host
+    Write-Host "Resource ID of the selected AKS cluster(s):"
+    $aksClusters | ForEach-Object {
+        # Set subscription context to that of the AKS cluster
+        Set-AzCliSubscription $_.subscriptionId
+
+        # Get resource ID of the AKS cluster
+        $resourceId = az aks show --name $_.name --resource-group $_.resourceGroup --query id --output tsv
+        Write-Host "$($_.name): $resourceId"
+    }
+}
+
+# Function to update the AKS cluster resource(s) by ID(s)
+function Update-ClusterResources($aksClusters) {
+    Write-Host
+    $ignoreWarning = Read-Host "`e[31m!!`e[0m This action will update the selected AKS cluster(s) and may cause disruption depending on PDBs/HPAs/resources/activity. Continue? (y/n)"
+    if ($ignoreWarning -eq "y") {
+        Write-Host "Updating the selected AKS cluster(s):"
+        $aksClusters | ForEach-Object {
+            # Set subscription context to that of the AKS cluster
+            Set-AzCliSubscription $_.subscriptionId
+
+            # Update the AKS cluster
+            az resource update --ids $_.resourceId
+        }
+    }
+    else {
+        Write-Host "Action cancelled."
+    }
+}
+
+# Function to populate catalog of management actions
+function Get-ManagementActions {
+    [ManagementAction[]] $managementActions = @()
+    $managementActions += [ManagementAction]::new("Get-KubectlCredentialsForAksClusters", "Get kubectl credentials for the selected AKS cluster(s)", { param ($aksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults) Get-KubectlCredentialsForAksClusters $aksClusters $ProxyUrl -SkipProxyAll:$SkipProxyAll -SetupAllWithDefaults:$SetupAllWithDefaults })
+    $managementActions += [ManagementAction]::new("Test-ConnectionsToAksClusters", "Test connection(s) to the selected AKS cluster(s) using kubectl version command", { param ($aksClusters) Test-ConnectionsToAksClusters $aksClusters })
+    $managementActions += [ManagementAction]::new("Get-ClusterResourceIds", "Get the resource ID(s) of the selected AKS cluster(s)", { param ($aksClusters) Get-ClusterResourceIds $aksClusters })
+    $managementActions += [ManagementAction]::new("`e[31m!!`e[0m Update-ClusterResources", "Update the selected AKS cluster resource(s) by ID(s)", { param ($aksClusters) Update-ClusterResources $aksClusters })
+    return $managementActions
+}
+
+# Function to invoke a management action on an array of AKS clusters
+function Invoke-ClusterAction {
+    param (
+        [ManagementAction]$Action,
+        [Cluster[]]$AksClusters,
+        [string]$ProxyUrl,
+        [switch]$SkipProxyAll,
+        [switch]$SetupAllWithDefaults
+    )
+
+    Write-Host
+    Write-Host "Executing action: $($Action.Name) - $($Action.Description) on the selected AKS cluster(s):"
+    # Execute the selected action on the AKS cluster
+    Invoke-Command $Action.Script -ArgumentList $AksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults
+    if (!$SkipTestConnections -and $Action.Name -eq "Get-KubectlCredentialsForAksClusters") {
+        Test-ConnectionsToAksClusters $AksClusters
+    }
+}
+
+function Get-DefaultProxyUrl ($ProxyUrlFromArgs) {
+    # Set up the storage of a default value for the proxy URL in the user's variables
+    $ProxyUrl = $([Environment]::GetEnvironmentVariable('AzKubeDefaultProxyUrl', 'User'))
+    # If the variable does not exist, prompt the user to set the default proxy URL
+    if ($null -eq $ProxyUrl -or $ProxyUrl -eq "" -or ($ProxyUrlFromArgs -ne "" -and $ProxyUrlFromArgs -ne $ProxyUrl)) {
+        if ($null -ne $ProxyUrlFromArgs -and $ProxyUrlFromArgs -ne "") {
+            $ProxyUrl = $ProxyUrlFromArgs
+        }
+        else {
+            $ProxyUrl = Read-Host "Enter the default proxy URL suggestion for AKS clusters (used without prompting w/ -SetupAllWithDefaults parameter)"
+        }
+        # Set permanent system environment variable for the default proxy URL
+        [Environment]::SetEnvironmentVariable("AzKubeDefaultProxyUrl", $ProxyUrl, "User")
+        # Set the variable in the current session
+        $env:AzKubeDefaultProxyUrl = $ProxyUrl
+    }
+    return $ProxyUrl
 }
