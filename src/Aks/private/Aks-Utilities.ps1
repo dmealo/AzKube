@@ -319,6 +319,9 @@ function Get-ClusterResourceIds($aksClusters) {
         # Get resource ID of the AKS cluster
         $resourceId = az aks show --name $_.name --resource-group $_.resourceGroup --query id --output tsv
         Write-Host "$($_.name): $resourceId"
+
+        # Copy resource ID to clipboard
+        Set-Clipboard -Value $resourceId
     }
 }
 
