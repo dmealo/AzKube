@@ -366,6 +366,7 @@ function Invoke-ClusterAction {
 
     Write-Host
     Write-Host "Executing action: $($Action.Name) - $($Action.Description) on the selected AKS cluster(s):"
+    $AksClusters | ForEach-Object { Write-Host $_.Name }
     # Execute the selected action on the AKS cluster
     Invoke-Command $Action.Script -ArgumentList $AksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults
     if (!$SkipTestConnections -and $Action.Name -eq "Get-KubectlCredentialsForAksClusters") {
