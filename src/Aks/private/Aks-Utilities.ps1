@@ -309,19 +309,27 @@ function Test-ConnectionsToAksClusters($aksClusters) {
 }
 
 # Function to get the resource ID of an AKS cluster
-function Get-ClusterResourceIds($aksClusters) {
-    Write-Host
-    Write-Host "Resource ID of the selected AKS cluster(s):"
+function Get-ClusterResourceIds($aksClusters, $background) {
+    if (!$background) {
+        Write-Host
+        Write-Host "Resource ID of the selected AKS cluster(s):"
+    }
     $aksClusters | ForEach-Object {
         # Set subscription context to that of the AKS cluster
         Set-AzCliSubscription $_.subscriptionId
 
         # Get resource ID of the AKS cluster
         $resourceId = az aks show --name $_.name --resource-group $_.resourceGroup --query id --output tsv
-        Write-Host "$($_.name): $resourceId"
+        if (!$background) {
+            Write-Host "$($_.name): $resourceId"
 
-        # Copy resource ID to clipboard
-        Set-Clipboard -Value $resourceId
+            # Copy resource ID to clipboard
+            Set-Clipboard -Value $resourceId
+        }
+
+        if ($background) {
+            return $resourceId
+        }
     }
 }
 
@@ -330,13 +338,34 @@ function Update-ClusterResources($aksClusters) {
     Write-Host
     $ignoreWarning = Read-Host "`e[31m!!`e[0m This action will update the selected AKS cluster(s) and may cause disruption depending on PDBs/HPAs/resources/activity. Continue? (y/n)"
     if ($ignoreWarning -eq "y") {
-        Write-Host "Updating the selected AKS cluster(s):"
+        Write-Host
+        Write-Host "Updating the selected AKS cluster(s)..."
         $aksClusters | ForEach-Object {
             # Set subscription context to that of the AKS cluster
             Set-AzCliSubscription $_.subscriptionId
 
-            # Update the AKS cluster
-            az resource update --ids $_.resourceId
+            # Update the AKS cluster in a separate process
+            Start-Process -NoNewWindow -FilePath "az" -ArgumentList "resource update --ids $(Get-ClusterResourceIds $_ $true)" -RedirectStandardOutput "NUL"
+
+            # Display cluster provisioning state in a loop with a progress indicator
+            $pollingStart = 30
+            $provisioningState = az aks show --name $_.name --resource-group $_.resourceGroup --query provisioningState --output tsv
+            Write-Host "Updating $($_.name). Waiting $pollingStart seconds before polling for provisioning state..."
+            # Wait for update to begin before starting to poll for provisioning state
+            Start-Sleep -Seconds $pollingStart         
+            $provisioningState = az aks show --name $_.name --resource-group $_.resourceGroup --query provisioningState --output tsv
+            Write-Host $provisioningState -NoNewline
+            while ($provisioningState -eq "Updating") {
+                Write-Host "." -NoNewline
+                Start-Sleep -Seconds 5
+                $provisioningState = az aks show --name $_.name --resource-group $_.resourceGroup --query provisioningState --output tsv
+            }
+            Write-Host
+            Write-Host "Provisioning state result: $provisioningState" -ForegroundColor Yellow
+            
+            # Wait for user input to continue
+            Write-Host
+            Read-Host "Press ENTER to continue"
         }
     }
     else {
