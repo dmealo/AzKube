@@ -376,7 +376,7 @@ function Update-ClusterResources($aksClusters) {
 # Function to populate catalog of management actions
 function Get-ManagementActions {
     [ManagementAction[]] $managementActions = @()
-    $managementActions += [ManagementAction]::new("Get-KubectlCredentialsForAksClusters", "Get kubectl credentials for the selected AKS cluster(s)", { param ($aksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults) Get-KubectlCredentialsForAksClusters $aksClusters $ProxyUrl -SkipProxyAll:$SkipProxyAll -SetupAllWithDefaults:$SetupAllWithDefaults -SkipTestConnections })
+    $managementActions += [ManagementAction]::new("Get-KubectlCredentialsForAksClusters", "Get kubectl credentials for the selected AKS cluster(s)", { param ($aksClusters, $ProxyUrl, $SkipProxyAll, $SetupAllWithDefaults) Get-KubectlCredentialsForAksClusters $aksClusters $ProxyUrl -SkipProxyAll:$SkipProxyAll -SetupAllWithDefaults:$SetupAllWithDefaults -SkipTestConnections:$SkipTestConnections })
     $managementActions += [ManagementAction]::new("Test-ConnectionsToAksClusters", "Test connection(s) to the selected AKS cluster(s) using kubectl version command", { param ($aksClusters) Test-ConnectionsToAksClusters $aksClusters })
     $managementActions += [ManagementAction]::new("Get-ClusterResourceIds", "Get the resource ID(s) of the selected AKS cluster(s)", { param ($aksClusters) Get-ClusterResourceIds $aksClusters })
     $managementActions += [ManagementAction]::new("`e[31m!!`e[0m Update-ClusterResources", "Update the selected AKS cluster resource(s) by ID(s)", { param ($aksClusters) Update-ClusterResources $aksClusters })
