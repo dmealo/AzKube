@@ -75,3 +75,20 @@ function Show-Tenants {
     # Return the selected Tenant object
     return $selectedTenantObject
 }
+
+function Display-SelectedTenant {
+    param (
+        [Tenant]$SelectedTenant,
+        [string]$Title = "Selected tenant:"
+    )
+    Write-Host
+    Write-Host $Title -ForegroundColor Cyan
+    Write-Host
+    Write-Host "Selected tenant: $($SelectedTenant.ToString())" -ForegroundColor Green
+    Write-Host
+    $switchTenant = Read-Host "Do you want to switch tenants? (y/n)"
+    if ($switchTenant -eq "y") {
+        return $true
+    }
+    return $false
+}
