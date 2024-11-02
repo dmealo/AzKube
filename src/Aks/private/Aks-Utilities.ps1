@@ -325,6 +325,7 @@ function Get-ClusterResourceIds($aksClusters, $background) {
 
             # Copy resource ID to clipboard
             Set-Clipboard -Value $resourceId
+            Write-Host "Resource ID copied to clipboard"
         }
 
         if ($background) {

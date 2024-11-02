@@ -6,8 +6,8 @@
     CompanyName = 'Your Company'
     Description = 'Module for managing AKS clusters'
     FunctionsToExport = @(
-        'Manage-Aks-Clusters',
-        'Setup-Aks-Kubectl'
+        'Set-AksClusters',
+        'Set-AksKubectl'
     )
     PrivateData = @{
         PSData = @{
