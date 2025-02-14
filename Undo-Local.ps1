@@ -3,12 +3,6 @@
 # .\Undo-Local.ps1
 #
 
-# Unregister the NuGet repository
-Unregister-PSRepository -Name AzKubeRepo
-
-# Remove the NuGet repository
-Remove-Item -Path ./NuGetRepo -Force -Recurse
-
 # Remove the module from the local repository
 if (Get-Module -Name AzKube) {
     Remove-Module -Name AzKube -Force
@@ -16,6 +10,17 @@ if (Get-Module -Name AzKube) {
     # Verify the module is removed
     Get-Module -Name AzKube
 }
+
+# Uninstall the module
+if (Get-Module -Name AzKube -ListAvailable) {
+    Uninstall-Module -Name AzKube -Force -AllVersions
+}
+
+# Unregister the NuGet repository
+Unregister-PSRepository -Name AzKubeRepo -ErrorAction SilentlyContinue
+
+# Remove the NuGet repository
+Remove-Item -Path ./src/AzKube/NuGetRepo -Force -Recurse
 
 # Remove the module from the PSModulePath
 $path = (Resolve-Path '.').Path
