@@ -144,11 +144,11 @@ function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
     $azAccount = Get-AzContext
     if ($null -eq $azAccount -or $forceReconnect -or ($null -ne $tenantId -and $azAccount.Tenant.Id -ne $tenantId)) {
         if ($null -ne $tenantId) {
-            Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId"
+            Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId`nChoose any subscription if prompted. We will change it later if needed."
             Connect-AzAccount -Tenant $tenantId -only -WarningAction Ignore
         }
         else {
-            Write-Host "Logging into Azure from Azure PowerShell..."
+            Write-Host "Logging into Azure from Azure PowerShell...`nChoose any subscription if prompted. We will change it later if needed."
             Connect-AzAccount -WarningAction Ignore
         }
     }
