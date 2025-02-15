@@ -57,7 +57,7 @@ class Tenant {
     }
 
     [string] ToString() {
-        return "$($this.Name) - $($this.Id)"
+        return "$($this.Name -eq '' ? "(No name)" : $this.Name) - $($this.Id)"
     }
 }
 
@@ -121,12 +121,12 @@ function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
         if ($null -ne $tenantId) {
             # Log into Azure with minimal output with the specified tenant ID if provided
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
-            az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
+            Connect-Azure-Simplified -tenantId $tenantId
         }
         else {
             # Log into Azure with minimal output
             Write-Host "Logging into Azure from Azure CLI..."
-            az login --allow-no-subscriptions --output none --only-show-errors
+            Connect-Azure-Simplified
         }
     }
     elseif ($null -ne $tenantId) {
@@ -134,7 +134,7 @@ function Connect-AzureCli ($forceReconnect = $false, $tenantId = $null) {
         $tenantMatches = az account list --only-show-errors | ConvertFrom-Json | Where-Object { $_.tenantId -eq $tenantId }
         if (($null -eq $tenantMatches -or $tenantMatches.Count -eq 0) -or $forceReconnect) {
             Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
-            az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
+            Connect-Azure-Simplified -tenantId $tenantId
         }
     }
 }
@@ -152,6 +152,57 @@ function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
             Connect-AzAccount -WarningAction Ignore
         }
     }
+}
+
+# Function to log into Azure using Azure CLI with handling of WAM pop up and subscription selection prompt
+function Connect-Azure-Simplified ($tenantId = $null) {
+    Write-Host "Simplifying signin to Azure via Az CLI."
+    # Save WAM pop up config to variable to restore after login
+    $wamConfig = az config get core.enable_broker_on_windows | ConvertFrom-Json | Select-Object -ExpandProperty value
+    # Save subscription selection prompt config to variable to restore after login
+    $loginExperienceConfig = az config get core.login_experience_v2 | ConvertFrom-Json | Select-Object -ExpandProperty value
+
+    # Disable WAM pop up default behavior on Windows
+    az config set core.enable_broker_on_windows=false
+    # Disable subscription selection prompt
+    az config set core.login_experience_v2=off
+
+    if ($null -ne $tenantId) {
+        # Log into Azure with minimal output with the specified tenant ID if provided
+        Write-Host "Logging into Azure from Azure CLI with tenant ID: $tenantId"
+        az login --allow-no-subscriptions --output none --tenant $tenantId --only-show-errors
+    }
+    else {
+        # Log into Azure with minimal output
+        Write-Host "Logging into Azure from Azure CLI..."
+        az login --allow-no-subscriptions --output none --only-show-errors
+    }
+
+    # Restore previous user settings
+    if ($null -ne $wamConfig) {
+        az config set core.enable_broker_on_windows=$wamConfig
+    }
+    else {
+        az config unset core.enable_broker_on_windows
+    }
+    if ($null -ne $loginExperienceConfig) {
+        az config set core.login_experience_v2=$loginExperienceConfig
+    }
+    else {
+        az config unset core.login_experience_v2
+    }
+}
+
+ function GetRandomString {
+    param (
+        [int] $length = 22
+    )
+    $randomStr = ''
+    $chars = (65..90) + (97..122) + (48..57) # ASCII ranges for A-Z, a-z, 0-9
+    $randomStr = -join (Get-Random -InputObject $chars -Count $length | ForEach-Object { [char]$_ })
+    Write-Debug "Length: $($randomStr.Length)"
+    Write-Debug "Random string generated: $randomStr"
+    return $randomStr
 }
 
 # Function to reconcile Azure CLI and Azure PowerShell module logins
@@ -173,11 +224,11 @@ function Invoke-AzureLoginReconciliation {
         $accountToKeep = Read-Host "Which login do you want to keep? (1) $azAccountName or (2) $azContextName"
         if ($accountToKeep -eq "1") {
             # Log into Azure using Azure PowerShell module
-            Connect-Az -forceReconnect
+            Connect-Az -forceReconnect $true
         }
         else {
             # Log into Azure using Azure CLI
-            Connect-AzureCli -forceReconnect
+            Connect-AzureCli -forceReconnect $true
         }
     }    
 }
@@ -321,7 +372,7 @@ function Get-ClusterResourceIds($aksClusters, $background) {
         # Get resource ID of the AKS cluster
         $resourceId = az aks show --name $_.name --resource-group $_.resourceGroup --query id --output tsv
         if (!$background) {
-            Write-Host "$($_.name): $resourceId"
+            Write-Host "$($_.name) resource ID: $resourceId"
 
             # Copy resource ID to clipboard
             Set-Clipboard -Value $resourceId

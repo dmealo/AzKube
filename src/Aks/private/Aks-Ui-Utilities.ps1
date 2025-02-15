@@ -53,7 +53,7 @@ function Show-Tenants {
         [Tenant[]]$Tenants,
         [string]$Title = "Select tenant or hit Esc to exit:"
     )
-    Clear-Host
+    # Clear-Host
     Write-Host
     Write-Host $Title -ForegroundColor Cyan
     Write-Host
