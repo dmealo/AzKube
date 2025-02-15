@@ -67,7 +67,7 @@ function Show-Tenants {
     # Check that a valid tenant was selected
     if ($null -eq $selectedTenantObject) {
         Write-Host
-        Write-Host "No valid tenant selected. Exiting." -ForegroundColor Yellow
+        Write-Host "No valid tenant selected.`n$([System.Text.Encoding]::UTF8.GetString([byte[]](240, 159, 143, 131))) Exiting. Thanks for stopping by!" -ForegroundColor Yellow
         return $null
     }
     Write-Host
