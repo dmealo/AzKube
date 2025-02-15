@@ -1,5 +1,3 @@
-
-
 # Class with ToString method to display AKS clusters
 class Cluster {
     [string]$Name
@@ -78,6 +76,13 @@ class TenantList {
         # Set the selected tenant as the default tenant in Azure CLI and Azure PowerShell module
         Connect-AzureCli -tenantId $this.SelectedTenant.Id
         Connect-Az -tenantId $this.SelectedTenant.Id
+    }
+
+    DisplaySelectedTenant() {
+        $switchTenant = Display-SelectedTenant -SelectedTenant $this.SelectedTenant
+        if ($switchTenant) {
+            $this.Select()
+        }
     }
 }
 

@@ -48,10 +48,14 @@ function Set-AksClusters {
         Write-Host
         Write-Host "Loading interface..." -ForegroundColor Cyan
         $tenant = [TenantList]::New()
-        $tenant.Select()
+
+        # Display the selected tenant and provide an option to switch tenants
+        $tenant.DisplaySelectedTenant()
+       
         if ($null -eq $tenant) {
             exit 0
         }
+    
         if ($null -eq $tenant.SelectedTenant) {
             return
         }
