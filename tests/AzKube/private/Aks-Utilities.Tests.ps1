@@ -48,6 +48,10 @@ Describe "Aks-Utilities Tests" {
     Describe "Install-AzureCli" {
         Context "When Azure CLI is not installed" {
             BeforeEach {
+                # Add a dummy winget function if not present to avoid CommandNotFoundException
+                if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+                    function winget { param($args) return }
+                }
                 Mock Get-Command { }
                 Mock winget { }
             }
@@ -64,6 +68,10 @@ Describe "Aks-Utilities Tests" {
         Context "When Azure CLI is already installed" {
             BeforeEach {
                 Mock Get-Command { az }
+                # Ensure winget is stubbed too
+                if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+                    function winget { param($args) return }
+                }
                 Mock winget { }
             }
 
