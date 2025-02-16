@@ -1,30 +1,33 @@
 # AzKube 🚀
 
 ## Overview 📖
-AzKube is a PowerShell module designed to simplify the management and automation of Azure Kubernetes Service (AKS) clusters. It provides a set of cmdlets to manage AKS clusters, connections, and utilities to streamline your workflow.
+AzKube is a PowerShell module designed to simplify the management and automation of Azure Kubernetes Service (AKS) clusters. It provides a set of cmdlets that streamline your AKS workflow by listing resource group details for and allowing management of AKS clusters including easy batch setup and testing of local `kubectl` connections, getting cluster resource IDs, `az resource update`-ing clusters.
 
 ## Features ✨
 - Manage AKS clusters
-    - Set up AKS connections for `kubectl` and `kubectl`-based tools (like OpenLens, Lens, k9s, etc.)
-    - Test AKS connections for `kubectl` et al
-    - Get resource IDs for AKS clusters
-    - Run `az resource update` on AKS clusters to restart AKS Planned Maintenance (Cluster Upgrades, Node Image Upgrades, Weekly Updates)
+  - List AKS clusters, their resource group and their subscription ID
+  - Set up AKS connections for `kubectl` and `kubectl`-based tools (like OpenLens, Lens, k9s, etc.)
+  - Test AKS connections for `kubectl` et al
+  - Get resource IDs for AKS clusters
+  - Run `az resource update` on AKS clusters to restart AKS Planned Maintenance (Cluster Upgrades, Node Image Upgrades, Weekly Updates)
 - Set up AKS connections standalone command
     - Set up AKS connections for `kubectl` and `kubectl`-based tools (like OpenLens, Lens, k9s, etc.)
     - Test AKS connections for `kubectl` et al
 
+## Installation 🤝
+1. Install the Module from PowerShell Gallery 📦
+    ```powershell
+    Install-Module -Name AzKube
+    ```
+
+2. Import the Module 📥
+    ```powershell
+    Import-Module -Name AzKube
+    ```
 ## Usage 🛠️
-To use the AzKube module, import it into your PowerShell session and use the available cmdlets. Below are some examples:
+To use the AzKube module, import it into your PowerShell session and use the available cmdlets. You can select and multiselect clusters using `Up`, `Down` to move through options and `Space` to toggle selection, and then `Enter` to list possible actions (see [Features](#Features)) you can move through and then execute with `Enter`. Or `Esc` from most menus to Exit the module.
 
-### Install the Module from PowerShell Gallery 📦
-```powershell
-Install-Module -Name AzKube
-```
-
-### Import the Module 📥
-```powershell
-Import-Module -Name AzKube
-```
+CLI examples:
 
 ### Set AKS Clusters 🌐
 ```powershell
