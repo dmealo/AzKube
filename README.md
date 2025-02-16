@@ -16,6 +16,11 @@ AzKube is a PowerShell module designed to simplify the management and automation
 ## Usage 🛠️
 To use the AzKube module, import it into your PowerShell session and use the available cmdlets. Below are some examples:
 
+### Install the Module from PowerShell Gallery 📦
+```powershell
+Install-Module -Name AzKube
+```
+
 ### Import the Module 📥
 ```powershell
 Import-Module -Name AzKube
@@ -23,30 +28,30 @@ Import-Module -Name AzKube
 
 ### Set AKS Clusters 🌐
 ```powershell
-Set-AksClusters -ProxyUrl "http://proxy.example.com" -SkipProxyAll -SkipTestConnections -SetupAllWithDefaults -SelectAll -SkipTestActions
+Set-AksClusters # run with defaults and/or saved settings
 ```
-- `-ProxyUrl`: Proxy URL to be used for all AKS clusters.
-- `-SkipProxyAll`: Skip setting proxy on any AKS cluster.
-- `-SkipTestConnections`: Skip testing connections to the AKS clusters.
-- `-SetupAllWithDefaults`: Simple mode to get kubectl credentials for all AKS clusters found on all subscriptions in logged in tenant without asking for user input using default proxy.
-- `-SelectAll`: Initially select all AKS clusters for taking the action selected in the menu.
-- `-SkipTestActions`: Skip testing connections to the AKS clusters.
+- `-ProxyUrl` [Default: '']: Proxy URL to be used for all AKS clusters. Will be saved to AzKubeProxyUrl user environment variable for default value.
+- `-SkipProxyAll` [Default: $false]: Skip setting proxy on any AKS cluster.
+- `-SkipTestConnections` [Default: $false]: Skip testing connections to the AKS clusters.
+- `-SetupAllWithDefaults` [Default: $false]: Simple mode to get kubectl credentials for all AKS clusters found on all subscriptions in logged in tenant without asking for user input using default proxy.
+- `-SelectAll` [Default: $false]: Initially select all AKS clusters for taking the action selected in the menu.
+- `-SkipTestActions` [Default: $false]: Skip testing connections to the AKS clusters.
 
 ### Set AKS Connections 🔗
 ```powershell
-Set-AksConnections -ProxyUrl "http://proxy.example.com" -SkipProxyAll -SkipTestConnections -SetupAllWithDefaults -SelectAll
+Set-AksConnections # run with defaults and/or saved settings
 ```
-- `-ProxyUrl`: Proxy URL to be used for all AKS clusters.
-- `-SkipProxyAll`: Skip setting proxy on any AKS cluster.
-- `-SkipTestConnections`: Skip testing connections to the AKS clusters.
-- `-SetupAllWithDefaults`: Simple mode to get kubectl credentials for all AKS clusters found on all subscriptions in logged in tenant without asking for user input using default proxy.
-- `-SelectAll`: Initially select all AKS clusters for getting kubectl credentials.
+- `-ProxyUrl` [Default: '']: Proxy URL to be used for all AKS clusters. Will be saved to AzKubeProxyUrl user environment variable for default value.
+- `-SkipProxyAll` [Default: $false]: Skip setting proxy on any AKS cluster.
+- `-SkipTestConnections` [Default: $false]: Skip testing connections to the AKS clusters.
+- `-SetupAllWithDefaults` [Default: $false]: Simple mode to get kubectl credentials for all AKS clusters found on all subscriptions in logged in tenant without asking for user input using default proxy.
+- `-SelectAll` [Default: $false]: Initially select all AKS clusters for getting kubectl credentials.
 
-## Reporting Issues 🐛
-If you encounter any issues, please report them by creating an issue in the [ISSUES.md](ISSUES.md) file.
+<!-- ## Reporting Issues 🐛
+If you encounter any issues, please report them by creating an issue as described at [ISSUES.md](./docs/ISSUES.md).
 
 ## Contributing 🤝
-We welcome contributions from the community. Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute to the project.
+We welcome contributions from the community. Please read the [CONTRIBUTING.md](./docs/CONTRIBUTING.md) file for guidelines on how to contribute to the project. -->
 
 ## Thanks 🙏
 Thank you for your interest in AzKube. We appreciate your help in reporting issues and contributing to the project.
