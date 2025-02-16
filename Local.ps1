@@ -10,7 +10,7 @@ param (
 
     [Parameter()]
     [Int16]
-    $minorVersion = 2,
+    $minorVersion = 21,
 
     [Parameter()]
     [Int16]
@@ -27,16 +27,18 @@ param (
 
 Begin {
     Write-Debug "DEBUG MODE ENABLED"
-}
-
-Process {
 
     # Ensure you have the NuGet module installed if not install it
     if (-not (Get-Module -Name NuGet -ListAvailable)) {
         Install-Module -Name NuGet -Force -SkipPublisherCheck
     }
+}
+
+Process {
+    $repoName = "AzKubeRepo"
 
     # Navigate to the src/AzKube directory
+    Push-Location $PSScriptRoot
     Push-Location src/AzKube
 
     # Increment the module version to the format yymmdd.hhmm.ss
@@ -75,8 +77,20 @@ Process {
         # If the module is already installed, uninstall it
         Write-Debug "Checking for existing module installation"
         if (Get-Module -Name AzKube -ListAvailable) {
+            # Remove the module            
+            Remove-Module -Name AzKube -Force
+            # Verify the module is removed
+            Get-Module -Name AzKube
+            # Uninstall the module
             Write-Debug "Uninstalling module"
             Uninstall-Module -Name AzKube -Force -AllVersions
+        }
+
+        # If the NuGet repository exists, remove it
+        Write-Debug "Checking for existing NuGet repository"
+        if (Get-PSRepository -Name $repoName -ErrorAction SilentlyContinue) {
+            Write-Debug "Removing existing NuGet repository to recreate it"
+            Unregister-PSRepository -Name $repoName -ErrorAction SilentlyContinue
         }
         
         # If the module is already in the NuGet repository, remove it
@@ -88,26 +102,25 @@ Process {
             Remove-Item -Path $modulePath -Force
         }
 
-        # If the NuGet repository exists, remove it
-        Write-Debug "Checking for existing NuGet repository"
-        if (Get-PSRepository -Name AzKubeRepo -ErrorAction SilentlyContinue) {
-            Write-Debug "Removing existing NuGet repository to recreate it"
-            Unregister-PSRepository -Name AzKubeRepo -ErrorAction SilentlyContinue
+        # Remove the module from the PSModulePath
+        $path = (Resolve-Path '.').Path
+        if ($env:PSModulePath -like "*$path*") {
+            $env:PSModulePath = $env:PSModulePath -replace ";$path", ""
         }
 
         # Register the NuGet repository with a proper name
-        if (-not (Get-PSRepository -Name "AzKubeRepo" -ErrorAction SilentlyContinue)) {
-            Write-Debug "Registering NuGet repository 'AzKubeRepo' with source location $repoPath"
-            Register-PSRepository -Name "AzKubeRepo" -SourceLocation $repoPath -InstallationPolicy Trusted | Out-Null
+        if (-not (Get-PSRepository -Name $repoName -ErrorAction SilentlyContinue)) {
+            Write-Debug "Registering NuGet repository '$repoName' with source location $repoPath"
+            Register-PSRepository -Name $repoName -SourceLocation $repoPath -InstallationPolicy Trusted | Out-Null
         }
 
         # Package the module using the module manifest, Publish-Module
         Write-Debug "Packaging the module"
-        Publish-Module -Path (Get-Location) -NuGetApiKey $NuGetApiKey -Repository AzKubeRepo -Force -Verbose
+        Publish-Module -Path (Get-Location) -NuGetApiKey $NuGetApiKey -Repository $repoName -Force -Verbose
 
         # Install the module from the NuGet repository
         Write-Debug "Installing the module from the NuGet repository"
-        Install-Module -Name AzKube -Repository AzKubeRepo -Force
+        Install-Module -Name AzKube -Repository $repoName -Force
 
         # If already imported, remove the module, then import it
         Write-Debug "Checking for existing module installation"

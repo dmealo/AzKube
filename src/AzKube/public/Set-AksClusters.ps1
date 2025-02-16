@@ -43,15 +43,32 @@ function Set-AksClusters {
     Install-AzureCli
     Install-PsMenu
 
+    $tenant = [TenantList]::New()
+
     do {
         # Create and use a new TenantList object to get all tenants
+        Clear-Host
         Write-Host
         Write-Host "Loading interface..." -ForegroundColor Cyan
-        $tenant = [TenantList]::New()
-        $tenant.Select()
+        Clear-Host
+        if ($global:SelectedTenant) {
+            # Use the saved tenant to initialize your tenant list
+            $tenant.SelectedTenant = $global:SelectedTenant
+        }
+        else {
+            # Load save tenant from user environment variable if it exists
+            $tenant.SelectedTenant = $env:AzKubeSelectedTenant
+            if ($null -ne $tenant.SelectedTenant) {
+                $global:SelectedTenant = $tenant.SelectedTenant
+            }
+        }
+        # Display or select tenant if not already set
+        $tenant.DisplaySelectedTenant()
+       
         if ($null -eq $tenant) {
             exit 0
         }
+    
         if ($null -eq $tenant.SelectedTenant) {
             return
         }
@@ -62,7 +79,7 @@ function Set-AksClusters {
             exit 0
         }
         # Show AKS clusters as a simple menu for selection
-        $aksClusters = & Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to manage:"  -MultiSelect:$true
+        $aksClusters = & Show-ClusterMenu -Clusters $aksClusters -SelectAll:$SelectAll -HideSummary:$false -Title "Select AKS cluster(s) to manage or ESC to quit:"  -MultiSelect:$true
 
         if ($aksClusters.Count -gt 0) {
             # Show actions menu
