@@ -21,7 +21,12 @@ jobs:
 
     - name: Run Pester tests
       run: |
-        Invoke-Pester -Path ./tests/AzKube/private/Aks-Utilities.Tests.ps1 -OutputFormat NUnitXml -OutputFile ./test-results.xml
+        $config = New-PesterConfiguration
+        $config.Run.Path = 'tests'
+        $config.TestResult.Enabled = $true
+        $config.CodeCoverage.Enabled = $true
+        Invoke-Pester -Configuration $config
+      shell: pwsh
       continue-on-error: true
 
     - name: Publish test results
@@ -29,11 +34,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: ./test-results.xml
+        path: ./testResults.xml
 
     - name: Publish to PowerShell Gallery
       if: success()
       env:
         PSGalleryApiKey: ${{ secrets.PSGALLERY_API_KEY }}
       run: |
-        .\Local.ps1 -Package -Analyze -PatchVersion "${{ github.run_number }}-${{ github.run_attempt }}" -NuGetApiKey $env:PSGalleryApiKey
+        .\Build.ps1 -Package -Analyze -patchVersion "${{ github.run_number }}-${{ github.run_attempt }}" -NuGetApiKey $env:PSGalleryApiKey
