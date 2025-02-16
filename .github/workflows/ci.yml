@@ -35,7 +35,10 @@ jobs:
       with:
         name: test-results
         path: ./testResults.xml
-
+  publish:
+    runs-on: windows-latest
+    needs: build
+    steps:
     - name: Publish to PowerShell Gallery
       if: success()
       env:
