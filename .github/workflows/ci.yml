@@ -39,4 +39,4 @@ jobs:
       env:
         PSGalleryApiKey: ${{ secrets.PSGALLERY_API_KEY }}
       run: |
-        .\Local.ps1 -Package -NuGetApiKey $env:PSGalleryApiKey
+        .\Local.ps1 -Package -Analyze -PatchVersion "${{ github.run_number }}-${{ github.run_attempt }}" -NuGetApiKey $env:PSGalleryApiKey
