@@ -2,7 +2,7 @@
 param (
     [Parameter()]
     [switch]
-    $Package = $true, 
+    $Package, 
 
     [Parameter()]
     [Int16]
