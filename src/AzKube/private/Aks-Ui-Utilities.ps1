@@ -79,15 +79,20 @@ function Show-Tenants {
 function Display-SelectedTenant {
     param (
         [Tenant]$SelectedTenant,
-        [string]$Title = "Selected tenant:"
+        [string]$appTitle = "AzKube",
+        [string]$Title = " | Selected tenant"
     )
+
     Write-Host
+    # Write the app title in blue with no new line
+    Write-Host $appTitle -ForegroundColor Blue -NoNewline
     Write-Host $Title -ForegroundColor Cyan
     Write-Host
-    Write-Host "Selected tenant: $($SelectedTenant.ToString())" -ForegroundColor Green
+    Write-Host "Selected: $($SelectedTenant.ToString())" -ForegroundColor Green
     Write-Host
-    $switchTenant = Read-Host "Do you want to switch tenants? (y/n)"
-    if ($switchTenant -eq "y") {
+    # Switch tenant if user presses 't'
+    $key = Read-Host "Switch tenant? 't' to switch, any other key to view actions"
+    if ($key -eq 't') {
         return $true
     }
     return $false

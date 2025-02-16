@@ -73,15 +73,21 @@ class TenantList {
     Select() {
         Write-Debug "Tenants: $($this.Tenants.Count)"
         $this.SelectedTenant = Show-Tenants -MenuItems $this.Tenants
+        $global:SelectedTenant = $this.SelectedTenant
         # Set the selected tenant as the default tenant in Azure CLI and Azure PowerShell module
         Connect-AzureCli -tenantId $this.SelectedTenant.Id
         Connect-Az -tenantId $this.SelectedTenant.Id
     }
 
     DisplaySelectedTenant() {
-        $switchTenant = Display-SelectedTenant -SelectedTenant $this.SelectedTenant
-        if ($switchTenant) {
+        if ($null -eq $this.SelectedTenant) {
             $this.Select()
+        }
+        else {
+            $switchTenant = Display-SelectedTenant -SelectedTenant $this.SelectedTenant
+            if ($switchTenant) {
+                $this.Select()
+            }
         }
     }
 }
@@ -150,7 +156,7 @@ function Connect-Az ($forceReconnect = $false, $tenantId = $null) {
     if ($null -eq $azAccount -or $forceReconnect -or ($null -ne $tenantId -and $azAccount.Tenant.Id -ne $tenantId)) {
         if ($null -ne $tenantId) {
             Write-Host "Logging into Azure from Azure PowerShell with tenant ID: $tenantId`nChoose any subscription if prompted. We will change it later if needed."
-            Connect-AzAccount -Tenant $tenantId -only -WarningAction Ignore
+            Connect-AzAccount -Tenant $tenantId -WarningAction Ignore
         }
         else {
             Write-Host "Logging into Azure from Azure PowerShell...`nChoose any subscription if prompted. We will change it later if needed."
@@ -198,7 +204,7 @@ function Connect-Azure-Simplified ($tenantId = $null) {
     }
 }
 
- function GetRandomString {
+function GetRandomString {
     param (
         [int] $length = 22
     )
