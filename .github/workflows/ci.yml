@@ -36,6 +36,8 @@ jobs:
         name: test-results
         path: ./testResults.xml
   publish:
+    # Run only on commit on main not on PR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
     needs: build
     steps:
