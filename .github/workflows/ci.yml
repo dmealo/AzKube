@@ -13,6 +13,8 @@ on:
     paths-ignore:
       - ./*.ps1
       - '**.md'
+permissions:
+  contents: write
 
 jobs:
   build:
