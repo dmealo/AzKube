@@ -20,7 +20,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     # - name: Install Winget
     #   shell: pwsh
@@ -56,23 +56,13 @@ jobs:
         name: test-results
         path: ./testResults.xml
 
-    - name: Upload repository content
-      uses: actions/upload-artifact@v4
-      with:
-        name: repo-content
-        path: .
-        retention-days: 1
-
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
     needs: build
     steps:
-    - name: Download repository content
-      uses: actions/download-artifact@v4
-      with:
-        name: repo-content
-        path: .
+    - name: Checkout for Release
+      uses: actions/checkout@v4
       
     - name: Publish to PowerShell Gallery
       if: success()
