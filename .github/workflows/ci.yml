@@ -97,5 +97,5 @@ jobs:
         # Create release with auto-generated notes
         gh release create $tagName `
           --generate-notes `
-          --notes "Release of AzKube version $version`n`nThis release has been published to the PowerShell Gallery.`n`n## What's Changed" `
+          --notes "Release of AzKube version $version`n`nThis release has been published to the PowerShell Gallery.`n" `
           --latest
