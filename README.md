@@ -50,11 +50,12 @@ Set-AksConnections # run with defaults and/or saved settings
 - `-SetupAllWithDefaults` [Default: $false]: Simple mode to get kubectl credentials for all AKS clusters found on all subscriptions in logged in tenant without asking for user input using default proxy.
 - `-SelectAll` [Default: $false]: Initially select all AKS clusters for getting kubectl credentials.
 
-<!-- ## Reporting Issues 🐛
-If you encounter any issues, please report them by creating an issue as described at [ISSUES.md](./docs/ISSUES.md).
+## Reporting Issues 🐛
+If you encounter any issues, please report them by creating an issue. 
+<!-- If you encounter any issues, please report them by creating an issue as described at [ISSUES.md](./docs/ISSUES.md). -->
 
 ## Contributing 🤝
-We welcome contributions from the community. Please read the [CONTRIBUTING.md](./docs/CONTRIBUTING.md) file for guidelines on how to contribute to the project. -->
+We welcome contributions from the community. Set up for contributing is coming soon. Watch here for updates.
 
 ## Thanks 🙏
 Thank you for your interest in AzKube. We appreciate your help in reporting issues and contributing to the project.

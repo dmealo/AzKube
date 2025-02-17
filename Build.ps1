@@ -71,6 +71,8 @@ Process {
         -CompanyName 'dmealo' `
         -Description 'Module for managing AKS clusters' `
         -ModuleVersion $moduleVersion `
+        -ProjectUri 'https://github.com/dmealo/AzKube' `
+        -HelpInfoUri 'https://github.com/dmealo/AzKube/README.md'
         # -RequiredModules @('Az', 'PSMenu')
 
     # Test the module manifest

@@ -19,6 +19,8 @@ if (Get-Module -Name AzKube -ListAvailable) {
 # Unregister the NuGet repository
 Unregister-PSRepository -Name AzKubeRepo -ErrorAction SilentlyContinue
 
+Push-Location $PSScriptRoot
+
 # Remove the NuGet repository
 Remove-Item -Path ./src/AzKube/NuGetRepo -Force -Recurse
 
@@ -27,3 +29,4 @@ $path = (Resolve-Path '.').Path
 if ($env:PSModulePath -like "*$path*") {
     $env:PSModulePath = $env:PSModulePath -replace ";$path", ""
 }
+Pop-Location

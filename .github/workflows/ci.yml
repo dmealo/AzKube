@@ -4,9 +4,15 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - ./*.ps1
+      - '**.md'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - ./*.ps1
+      - '**.md'
 
 jobs:
   build:
@@ -58,7 +64,6 @@ jobs:
         retention-days: 1
 
   publish:
-    # Run only on commit on main not on PR
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
     needs: build
@@ -76,3 +81,33 @@ jobs:
         PSGalleryApiKey: ${{ secrets.PSGALLERY_API_KEY }}
       run: |
         .\Build.ps1 -Package -Analyze -patchVersion "${{ github.run_number }}-${{ github.run_attempt }}" -NuGetApiKey $env:PSGalleryApiKey
+
+    - name: Get Module Version
+      if: success()
+      id: get_version
+      shell: pwsh
+      run: |
+        $manifestPath = "src/AzKube/AzKube.psd1"
+        $moduleInfo = Import-PowerShellDataFile -Path $manifestPath
+        $majorMinor = $moduleInfo.ModuleVersion
+        $patchVersion = "${{ github.run_number }}-${{ github.run_attempt }}"
+        $fullVersion = "$majorMinor.$patchVersion"
+        echo "version=$fullVersion" >> $env:GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      if: success()
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $version = "${{ steps.get_version.outputs.version }}"
+        $tagName = "v$version"
+        $title = "Release v$version"
+        
+        # Create release with auto-generated notes
+        gh release create $tagName `
+          # --title $title `
+          # --notes-start-tag $(gh release list -L 1 --json tagName --jq '.[].tagName') `
+          --generate-notes `
+          --notes "Release of AzKube version $version`n`nThis release has been published to the PowerShell Gallery.`n`n## What's Changed" `
+          --latest
