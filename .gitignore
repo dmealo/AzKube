@@ -1,1 +1,3 @@
 src/AzKube/NuGetRepo/
+coverage.xml
+testResults.xml
