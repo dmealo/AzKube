@@ -14,7 +14,7 @@ param (
 
     [Parameter()]
     [Int16]
-    $minorVersion = 21,
+    $minorVersion = 22,
 
     [Parameter()]
     [Int16]
@@ -71,7 +71,7 @@ Process {
         -CompanyName 'dmealo' `
         -Description 'Module for managing AKS clusters' `
         -ModuleVersion $moduleVersion `
-        -RequiredModules @('Az', 'PSMenu')
+        # -RequiredModules @('Az', 'PSMenu')
 
     # Test the module manifest
     Test-ModuleManifest -Path ./AzKube.psd1
