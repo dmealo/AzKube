@@ -1,7 +1,9 @@
 # AzKube 🚀
 
 ## Overview 📖
-AzKube is a PowerShell module designed to simplify the management and automation of Azure Kubernetes Service (AKS) clusters. It provides a set of cmdlets that streamline your AKS workflow by listing resource group details for and allowing management of AKS clusters including easy batch setup and testing of local `kubectl` connections, getting cluster resource IDs, `az resource update`-ing clusters.
+AzKube is a PowerShell module designed to simplify the management and automation of Azure Kubernetes Service (AKS) clusters. It provides a set of cmdlets that streamline your AKS workflow by listing resource group details for and allowing management of AKS clusters including easy batch setup and testing of local `kubectl` connections (including setting/changing proxy URLs quickly), getting cluster resource IDs, `az resource update`-ing clusters.
+
+If you find yourself setting up or updating kubectl connections for projects often or wanting to just test them all quickly or wanting to just change the proxy URL for all of them quickly (like when one is failing 😩), this tool could be for you.
 
 ## Features ✨
 - Manage AKS clusters
