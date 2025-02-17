@@ -104,12 +104,14 @@ function Install-AzureCli {
 # Install Azure Powershell module if not already installed
 function Install-AzModule {
     if (-not (Get-Command Connect-AzAccount -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing Az module..."
         Install-Module -Name Az -Force
     }
 }
 
 # Install PSMenu if not already installed
 function Install-PSMenu {
+    Write-Host "Installing PSMenu module..."
     if (-not (Get-Command Show-Menu -ErrorAction SilentlyContinue)) {
         Install-Module -Name PSMenu -Force
     }
@@ -117,7 +119,7 @@ function Install-PSMenu {
 
 # Function to install kubectl using WinGet if not already installed
 function Install-Kubectl {
-    # Install kubectl using WinGet if not already installed
+    Write-Host "Installing kubectl using WinGet..."
     if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
         winget install --id Kubernetes.kubectl -e
     }

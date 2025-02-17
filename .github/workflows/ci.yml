@@ -16,7 +16,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-# - name: Install Winget
+    # - name: Install Winget
     #   shell: pwsh
     #   run: |
     #     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -58,6 +58,7 @@ jobs:
         retention-days: 1
 
   publish:
+    # Run only on commit on main not on PR
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
     needs: build
