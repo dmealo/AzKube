@@ -57,4 +57,4 @@ If you encounter any issues, please report them by creating an issue as describe
 We welcome contributions from the community. Please read the [CONTRIBUTING.md](./docs/CONTRIBUTING.md) file for guidelines on how to contribute to the project. -->
 
 ## Thanks 🙏
-Thank you for your interest in AzKube. We appreciate your help in reporting issues and contributing to the project.
+Thank you for your interest in AzKube! We appreciate your help in reporting issues and contributing to the project!
