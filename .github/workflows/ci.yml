@@ -49,14 +49,29 @@ jobs:
       with:
         name: test-results
         path: ./testResults.xml
+
+    - name: Upload repository content
+      uses: actions/upload-artifact@v4
+      with:
+        name: repo-content
+        path: .
+        retention-days: 1
+
   publish:
     # Run only on commit on main not on PR
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
     needs: build
     steps:
+    - name: Download repository content
+      uses: actions/download-artifact@v4
+      with:
+        name: repo-content
+        path: .
+      
     - name: Publish to PowerShell Gallery
       if: success()
+      shell: pwsh
       env:
         PSGalleryApiKey: ${{ secrets.PSGALLERY_API_KEY }}
       run: |
