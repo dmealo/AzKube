@@ -20,7 +20,7 @@ AzKube is a PowerShell module designed to simplify the management and automation
     Install-Module -Name AzKube
     ```
 
-2. Import the Module 📥
+2. Import the Module (Optional) 📥
     ```powershell
     Import-Module -Name AzKube
     ```
@@ -58,4 +58,4 @@ If you encounter any issues, please report them by creating an issue.
 We welcome contributions from the community. Set up for contributing is coming soon. Watch here for updates.
 
 ## Thanks 🙏
-Thank you for your interest in AzKube. We appreciate your help in reporting issues and contributing to the project.
+Thank you for your interest in AzKube! We appreciate your help in reporting issues and contributing to the project!

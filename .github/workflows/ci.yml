@@ -80,7 +80,7 @@ jobs:
       env:
         PSGalleryApiKey: ${{ secrets.PSGALLERY_API_KEY }}
       run: |
-        .\Build.ps1 -Package -Analyze -patchVersion "${{ github.run_number }}-${{ github.run_attempt }}" -NuGetApiKey $env:PSGalleryApiKey
+        .\Build.ps1 -Package -Analyze -patchVersion "${{ github.run_number }}${{ github.run_attempt }}" -NuGetApiKey $env:PSGalleryApiKey
 
     - name: Get Module Version
       if: success()
