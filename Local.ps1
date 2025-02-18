@@ -20,7 +20,7 @@ Process {
     # Build the module
     Push-Location $PSScriptRoot
     .\Build.ps1 -Local:$true -Package:$Package -Analyze:$Analyze
-    Pop-Location
+    Pop-Location 
 
     if ($RunAfterBuild) {
         # Run the module
