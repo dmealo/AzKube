@@ -111,16 +111,16 @@ function Install-AzModule {
 
 # Install PSMenu if not already installed
 function Install-PSMenu {
-    Write-Host "Installing PSMenu module..."
     if (-not (Get-Command Show-Menu -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing PSMenu module..."
         Install-Module -Name PSMenu -Force
     }
 }
 
 # Function to install kubectl using WinGet if not already installed
 function Install-Kubectl {
-    Write-Host "Installing kubectl using WinGet..."
     if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing kubectl using WinGet..."
         winget install --id Kubernetes.kubectl -e
     }
 }
