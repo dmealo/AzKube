@@ -35,13 +35,13 @@ if (Test-Path $nugetRepoPath) {
 
 # Remove the module from the PSModulePath
 $path = (Resolve-Path './src/AzKube').Path
-$path
+Write-Debug $path
 if ($env:PSModulePath -like "*$path*") {
     $escapedAzKubePath = $path -replace "\\", "\\\\\\\\"
-    $escapedAzKubePath
+    Write-Debug $escapedAzKubePath
     $escapedPSModulePath = $env:PSModulePath -replace "\\", "\\\\"
     $removedPath = $escapedPSModulePath -replace ";$escapedAzKubePath", ""
-    $removedPath
+    Write-Debug $removedPath
     if ($removedPath -ne '') {
         $env:PSModulePath = $removedPath -replace "\\\\\\\\", "\"
     }
