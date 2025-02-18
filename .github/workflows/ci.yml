@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths-ignore:
-      - /*.ps1
+      - '*.ps1'
       - '**.md'
   pull_request:
     branches:
       - main
     paths-ignore:
-      - /*.ps1
+      - '*.ps1'
       - '**.md'
 permissions:
   contents: write
