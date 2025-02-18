@@ -30,8 +30,7 @@ CompanyName = 'dmealo'
 Copyright = '(c) David Mealo. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'PowerShell module to simplify the management and automation of Azure Kubernetes Service (AKS) clusters. `
-        Batch creates kubectl connections including optional proxy, tests them, and more. See Project Site at https://github.com/dmealo/AzKube for more details, support, or to contribute.'
+Description = 'PowerShell module to simplify the management and automation of Azure Kubernetes Service (AKS) clusters. Batch creates kubectl connections including optional proxy, tests them, and more. See Project Site at https://github.com/dmealo/AzKube for more details, support, or to contribute.'
 
 # Minimum version of the PowerShell engine required by this module
 # PowerShellVersion = ''
