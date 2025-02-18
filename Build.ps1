@@ -136,7 +136,7 @@ Process {
 
         # Install the module from the NuGet repository
         Write-Debug "Installing the module from the NuGet repository"
-        Install-Module -Name AzKube -Repository $repoName -Force
+        Install-Module -Name AzKube -Repository $repoName -Force -ErrorAction Continue
 
         if ($Local) {
             # If already imported, remove the module, then import it

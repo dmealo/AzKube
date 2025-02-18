@@ -46,4 +46,5 @@ if ($env:PSModulePath -like "*$path*") {
         $env:PSModulePath = $removedPath -replace "\\\\\\\\", "\"
     }
 }
+
 Pop-Location
