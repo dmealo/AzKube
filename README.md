@@ -57,7 +57,7 @@ If you encounter any issues, please report them by creating an issue.
 <!-- If you encounter any issues, please report them by creating an issue as described at [ISSUES.md](./docs/ISSUES.md). -->
 
 ## Contributing 🤝
-We welcome contributions from the community. Set up for contributing is coming soon. Watch here for updates.
+We welcome contributions from the community! Reporting issues, requesting features, updating documentation, and/or implementing features (after concept discussion/approval so as not to waste effort) or fixes would all make this tool even more enjoyable. For example, suggesting or adding new commands that can be run against clusters could be relatively easy to implement, but add so much value. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## Thanks 🙏
 Thank you for your interest in AzKube! We appreciate your help in reporting issues and contributing to the project!
