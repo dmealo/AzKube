@@ -14,7 +14,7 @@ param (
 
     [Parameter()]
     [Int16]
-    $minorVersion = 23,
+    $minorVersion = 24,
 
     [Parameter()]
     [Int16]
@@ -54,14 +54,14 @@ Process {
     Push-Location src/AzKube
 
     # Increment the module version to the format yymmdd.hhmm.ss
-    if ($Package) {
+    # if ($Package) {
         $moduleVersion = $("$majorVersion.$minorVersion.$patchVersion")
-    }
-    else {
-        $moduleVersion = $(Get-Date).ToString('yyMMdd.HHmm.ss')
-    }
+    # }
+    # else {
+    #     $moduleVersion = $(Get-Date).ToString('yyMMdd.HHmm.ss')
+    # }
     # $moduleVersion = $("$majorVersion.$minorVersion.$patchVersion+$((Get-Date).ToString('yyMMdd.HHmm.ss'))")
-    Write-Host "Incrementing module version to $moduleVersion"
+    Write-Host "Setting module version to $moduleVersion"
 
 
     # Create the module manifest

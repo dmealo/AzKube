@@ -35,10 +35,19 @@ function Set-AksClusters {
         $SkipTestActions
     )
 
+    Clear-Host
+
+    $appTitle = "AzKube"
+    $Title = " | Starting..."
+
     . "$PSScriptRoot\..\private\Aks-Utilities.ps1"
     . "$PSScriptRoot\..\private\Aks-Ui-Utilities.ps1"
 
     $ProxyUrl = Get-DefaultProxyUrl -ProxyUrl $ProxyUrl
+
+    Write-Host
+    Write-Host $appTitle -ForegroundColor Blue -NoNewline
+    Write-Host $Title -ForegroundColor Cyan
 
     Install-AzureCli
     Install-PsMenu
@@ -47,9 +56,6 @@ function Set-AksClusters {
 
     do {
         # Create and use a new TenantList object to get all tenants
-        Clear-Host
-        Write-Host
-        Write-Host "Loading interface..." -ForegroundColor Cyan
         Clear-Host
         if ($global:SelectedTenant) {
             # Use the saved tenant to initialize your tenant list
@@ -62,6 +68,7 @@ function Set-AksClusters {
                 $global:SelectedTenant = $tenant.SelectedTenant
             }
         }
+
         # Display or select tenant if not already set
         $tenant.DisplaySelectedTenant()
        
