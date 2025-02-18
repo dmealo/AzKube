@@ -28,7 +28,7 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating
 4. Write or update tests for your changes
 5. Run tests locally using Pester
 6. Update documentation if needed
-7. Submit a pull request
+7. Submit a pull request using our [pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 
 #### Pull Request Guidelines
 
