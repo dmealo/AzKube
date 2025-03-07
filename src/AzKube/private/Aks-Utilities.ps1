@@ -370,6 +370,17 @@ function Test-ConnectionsToAksClusters($aksClusters) {
             Write-Host "$(Get-FailureShortString $($_.name)): $($_.Name)"
         }
     }
+
+    # Prompt user to press spacebar to continue
+    Write-Host
+    Write-Host "Press spacebar to continue..." -ForegroundColor Yellow -NoNewline
+    
+    # Wait for spacebar key
+    do {
+        $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    } while ($key.VirtualKeyCode -ne 32)  # 32 is the virtual key code for spacebar
+    
+    Write-Host "`nContinuing..." -ForegroundColor Green
 }
 
 # Function to get the resource ID of an AKS cluster
