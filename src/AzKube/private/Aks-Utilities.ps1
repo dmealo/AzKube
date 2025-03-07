@@ -36,7 +36,7 @@ class ManagementAction {
     }
 
     [string] ToString() {
-        return "$($this.Name) - $($this.Description) > $($this.Script)"
+        return "$($this.Description) ($($this.Name))"
     }
 }
 
