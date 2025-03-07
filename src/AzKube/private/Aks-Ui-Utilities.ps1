@@ -91,7 +91,7 @@ function Display-SelectedTenant {
     Write-Host "Selected: $($SelectedTenant.ToString())" -ForegroundColor Green
     Write-Host
     # Switch tenant if user presses 't'
-    $key = Read-Host "Switch tenant? 't' to switch, any other key to view actions"
+    $key = Read-Host "Switch tenant? 't' to switch, any other key to view clusters"
     if ($key -eq 't') {
         return $true
     }

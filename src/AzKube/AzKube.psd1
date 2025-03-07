@@ -11,7 +11,7 @@
 # Script module or binary module file associated with this manifest.
 RootModule = './AzKube.psm1'
 
-# Version number of this module.
+# Version number of this module. Set canonically in Build.ps1
 ModuleVersion = '0.25.0'
 
 # Supported PSEditions

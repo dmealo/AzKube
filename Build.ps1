@@ -14,7 +14,7 @@ param (
 
     [Parameter()]
     [Int16]
-    $minorVersion = 24,
+    $minorVersion = 25,
 
     [Parameter()]
     [Int16]
