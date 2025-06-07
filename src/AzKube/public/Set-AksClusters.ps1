@@ -1,7 +1,79 @@
 # Set-Aks-Clusters.ps1
 # Description: This script enables management of optional or all AKS clusters in all subscriptions.
 # Prerequisites: WinGet (install in Store for auto-updating, else static version via: `Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile winget.appxbundle ; Add-AppxPackage -Path winget.appxbundle`)
+
 function Set-AksClusters {
+    <#
+    .SYNOPSIS
+    Enables interactive management of Azure Kubernetes Service (AKS) clusters across all subscriptions.
+
+    .DESCRIPTION
+    Set-AksClusters provides an interactive interface for managing AKS clusters across all subscriptions 
+    in your Azure tenant. It allows you to select clusters and perform various management actions such as 
+    getting kubectl credentials, testing connections, and updating cluster resources.
+
+    .PARAMETER ProxyUrl
+    Specifies the proxy URL to be used for all AKS clusters. If not provided, the function will use 
+    the default proxy URL from environment variables or prompt for configuration.
+
+    .PARAMETER SkipProxyAll
+    When specified, skips setting proxy configuration on any AKS cluster during operations.
+
+    .PARAMETER SkipTestConnections
+    When specified, skips testing connections to the AKS clusters after performing management actions.
+
+    .PARAMETER SetupAllWithDefaults
+    When specified, processes all AKS clusters found across all subscriptions using default settings 
+    without prompting for user input. This is useful for automated scenarios.
+
+    .PARAMETER SelectAll
+    When specified, initially selects all AKS clusters in the interactive menu, allowing for quick 
+    bulk operations.
+
+    .PARAMETER SkipTestActions
+    When specified, skips testing actions after performing management operations on clusters.
+
+    .EXAMPLE
+    Set-AksClusters
+    
+    Launches the interactive AKS cluster management interface, allowing you to select clusters 
+    and management actions from menus.
+
+    .EXAMPLE
+    Set-AksClusters -SetupAllWithDefaults
+    
+    Processes all AKS clusters with default settings without user interaction, useful for 
+    automated deployment scenarios.
+
+    .EXAMPLE
+    Set-AksClusters -ProxyUrl "http://proxy.company.com:8080" -SelectAll
+    
+    Launches the interface with a specific proxy URL and pre-selects all clusters for 
+    bulk operations.
+
+    .EXAMPLE
+    Set-AksClusters -SkipProxyAll -SkipTestConnections
+    
+    Launches the interface without proxy configuration and skips connection testing.
+
+    .INPUTS
+    None. This function does not accept pipeline input.
+
+    .OUTPUTS
+    None. This function performs management operations and displays results to the console.
+
+    .NOTES
+    Prerequisites:
+    - Azure CLI must be installed and configured
+    - kubectl must be installed for cluster operations
+    - PowerShell module PSMenu is required for interactive menus
+    - User must have appropriate permissions to access AKS clusters
+
+    This function requires interactive input unless used with -SetupAllWithDefaults parameter.
+
+    .LINK
+    https://github.com/dmealo/AzKube
+    #>
     [CmdletBinding()]
     param (
         # Proxy URL to be used for all AKS clusters

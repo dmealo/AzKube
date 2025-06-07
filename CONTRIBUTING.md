@@ -71,6 +71,32 @@ Invoke-Pester -Configuration $config
 - Document functions using comment-based help (volunteer to improve existing ones!😁)
 - Keep lines under 100 characters where possible
 - Use meaningful variable names
+- Run PSScriptAnalyzer before submitting PRs: `Invoke-ScriptAnalyzer -Path . -Settings PSScriptAnalyzerSettings.psd1 -Recurse`
+- Use 4-space indentation (configured in .editorconfig)
+
+## GitHub Copilot Coding Agent Guidelines
+
+When working with GitHub Copilot Coding Agent, please follow these specific guidelines:
+
+### For Agents Working on Issues
+- **Use Issue Templates**: Always use the provided issue templates (Bug Report, Code Enhancement, Test Coverage, Documentation)
+- **Read Acceptance Criteria**: Carefully follow all acceptance criteria listed in issues
+- **Test Requirements**: Ensure all tests pass and add new tests for new functionality
+- **Documentation**: Update comment-based help for any modified public functions
+- **Minimal Changes**: Make the smallest possible changes to achieve the goal
+
+### Test Writing for Agents
+- **Mock External Dependencies**: Always mock Azure CLI, kubectl, and Azure PowerShell commands
+- **Isolated Tests**: Tests must run without external network access or Azure credentials
+- **Comprehensive Coverage**: Test both success and failure scenarios
+- **Parameter Testing**: Validate all function parameters and their types
+- **Follow Patterns**: Use existing test files as templates for structure and naming
+
+### Code Quality for Agents
+- **PSScriptAnalyzer**: All code must pass PSScriptAnalyzer with the project settings
+- **Comment-Based Help**: All public functions must have complete help documentation
+- **Error Handling**: Include meaningful error messages and proper exception handling
+- **Backward Compatibility**: Do not break existing functionality unless explicitly requested
 
 ## Documentation
 
