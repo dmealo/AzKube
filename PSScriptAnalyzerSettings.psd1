@@ -32,7 +32,6 @@
         'PSUseConsistentIndentation',
         'PSUseConsistentWhitespace',
         'PSUseCorrectCasing',
-        'PSUseDeclaredVarsMoreThanAssignments',
         'PSUseIdenticalMandatoryParametersForDSC',
         'PSUseIdenticalParametersForDSC',
         'PSUseLiteralInitializerForHashtable',
