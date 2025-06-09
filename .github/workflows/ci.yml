@@ -96,7 +96,7 @@ jobs:
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
-    needs: build
+    needs: test
     steps:
     - name: Checkout for Release
       uses: actions/checkout@v4
