@@ -90,7 +90,7 @@ jobs:
       with:
         name: Pester Tests
         path: ./testResults.xml
-        reporter: java-junit
+        reporter: dotnet-nunit
         fail-on-error: true
 
   publish:
