@@ -56,7 +56,7 @@ jobs:
         $config.Run.Path = 'tests'
         $config.TestResult.Enabled = $true
         $config.TestResult.OutputPath = './testResults.xml'
-        $config.TestResult.OutputFormat = 'NUnitXml'
+        $config.TestResult.OutputFormat = 'JUnitXml'
         $config.CodeCoverage.Enabled = $true
         $config.CodeCoverage.OutputPath = './coverage.xml'
         $config.CodeCoverage.OutputFormat = 'CoverageGutters'
@@ -90,7 +90,7 @@ jobs:
       with:
         name: Pester Tests
         path: ./testResults.xml
-        reporter: dotnet-nunit
+        reporter: java-junit
         fail-on-error: true
 
   publish:
