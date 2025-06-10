@@ -15,6 +15,7 @@ on:
       - '**.md'
 permissions:
   contents: write
+  checks: write
 
 jobs:
   test:
