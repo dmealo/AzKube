@@ -8,44 +8,6 @@
     # Severity levels to include
     Severity = @('Error', 'Warning', 'Information')
     
-    # Rules to include
-    IncludeRules = @(
-        'PSUseDeclaredVarsMoreThanAssignments',
-        'PSAvoidDefaultValueForMandatoryParameter',
-        'PSAvoidDefaultValueSwitchParameter',
-        'PSAvoidGlobalVars',
-        'PSAvoidUsingCmdletAliases',
-        'PSAvoidUsingComputerNameHardcoded',
-        'PSAvoidUsingConvertToSecureStringWithPlainText',
-        'PSAvoidUsingEmptyCatchBlock',
-        'PSAvoidUsingInvokeExpression',
-        'PSAvoidUsingPlainTextForPassword',
-        'PSAvoidUsingPositionalParameters',
-        'PSAvoidUsingUserNameAndPasswordParams',
-        'PSAvoidUsingWMICmdlet',
-        'PSAvoidUsingWriteHost',
-        'PSProvideCommentHelp',
-        'PSReservedCmdletChar',
-        'PSReservedParams',
-        'PSUseApprovedVerbs',
-        'PSUseCmdletCorrectly',
-        'PSUseConsistentIndentation',
-        'PSUseConsistentWhitespace',
-        'PSUseCorrectCasing',
-        'PSUseIdenticalMandatoryParametersForDSC',
-        'PSUseIdenticalParametersForDSC',
-        'PSUseLiteralInitializerForHashtable',
-        'PSUseOutputTypeCorrectly',
-        'PSUseProcessBlockForPipelineCommand',
-        'PSUsePSCredentialType',
-        'PSUseShouldProcessForStateChangingFunctions',
-        'PSUseSingularNouns',
-        'PSUseStrictMode',
-        'PSUseToExportFieldsInManifest',
-        'PSUseUTF8EncodingForHelpFile',
-        'PSUseVerboseMessageInDSCResource'
-    )
-    
     # Rules to exclude (with justification)
     ExcludeRules = @(
         # Allow Write-Host for user interface output
@@ -86,7 +48,7 @@
         }
         
         PSAvoidUsingCmdletAliases = @{
-            allowlist = @('cd', 'dir', 'ls', 'cat')
+            Whitelist = @('cd', 'dir', 'ls', 'cat')
         }
     }
 }
