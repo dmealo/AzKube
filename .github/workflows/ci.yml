@@ -86,7 +86,7 @@ jobs:
           ./coverage.xml
 
     - name: Publish test results summary
-      if: always()
+      if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
       uses: dorny/test-reporter@v1
       with:
         name: Pester Tests
