@@ -15,53 +15,89 @@ on:
       - '**.md'
 permissions:
   contents: write
+  checks: write
 
 jobs:
-  build:
+  test:
     runs-on: windows-latest
+    name: Test and Analyze Code
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # - name: Install Winget
-    #   shell: pwsh
-    #   run: |
-    #     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    #         Write-Host "winget not found, installing winget."
-    #         $wingetInstaller = "$env:TEMP\winget.appxbundle"
-    #         Invoke-WebRequest -Uri "https://aka.ms/getwinget" -OutFile $wingetInstaller
-    #         Add-AppxPackage -Path $wingetInstaller
-    #         # Refresh environment variables by appending typical install path
-    #         $env:PATH += ";C:\Program Files\WindowsApps"
-    #     } else {
-    #         Write-Host "winget is already installed."
-    #     }
+    - name: Install required PowerShell modules
+      shell: pwsh
+      run: |
+        Install-Module -Name Pester -Force -SkipPublisherCheck
+        Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
 
-    - name: Install Pester
-      run: Install-Module -Name Pester -Force -SkipPublisherCheck
+    - name: Run PSScriptAnalyzer
+      shell: pwsh
+      run: |
+        $analysisResults = Invoke-ScriptAnalyzer -Path . -Settings PSScriptAnalyzerSettings.psd1 -Recurse
+        if ($analysisResults) {
+          $analysisResults | ForEach-Object {
+            Write-Host "::$($_.Severity.ToString().ToLower())::$($_.ScriptName):$($_.Line):$($_.Column): $($_.Message) ($($_.RuleName))"
+          }
+          $errorCount = ($analysisResults | Where-Object Severity -eq 'Error').Count
+          $warningCount = ($analysisResults | Where-Object Severity -eq 'Warning').Count
+          Write-Host "PSScriptAnalyzer found $errorCount error(s) and $warningCount warning(s)"
+          if ($errorCount -gt 0) {
+            exit 1
+          }
+        } else {
+          Write-Host "PSScriptAnalyzer found no issues"
+        }
 
     - name: Run Pester tests
+      shell: pwsh
       run: |
         $config = New-PesterConfiguration
         $config.Run.Path = 'tests'
         $config.TestResult.Enabled = $true
+        $config.TestResult.OutputPath = './testResults.xml'
+        $config.TestResult.OutputFormat = 'JUnitXml'
         $config.CodeCoverage.Enabled = $true
-        Invoke-Pester -Configuration $config
-      shell: pwsh
-      continue-on-error: true
+        $config.CodeCoverage.OutputPath = './coverage.xml'
+        $config.CodeCoverage.OutputFormat = 'CoverageGutters'
+        $config.Output.Verbosity = 'Detailed'
+        
+        $result = Invoke-Pester -Configuration $config
+        
+        Write-Host "Test Summary:"
+        Write-Host "  Passed: $($result.PassedCount)"
+        Write-Host "  Failed: $($result.FailedCount)" 
+        Write-Host "  Skipped: $($result.SkippedCount)"
+        Write-Host "  Total: $($result.TotalCount)"
+        
+        if ($result.FailedCount -gt 0) {
+          Write-Host "::error::$($result.FailedCount) test(s) failed"
+          exit 1
+        }
 
     - name: Publish test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results
+        path: |
+          ./testResults.xml
+          ./coverage.xml
+
+    - name: Publish test results summary
+      if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+      uses: dorny/test-reporter@v1
+      with:
+        name: Pester Tests
         path: ./testResults.xml
+        reporter: java-junit
+        fail-on-error: true
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: windows-latest
-    needs: build
+    needs: test
     steps:
     - name: Checkout for Release
       uses: actions/checkout@v4
